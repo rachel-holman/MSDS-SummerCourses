@@ -41,6 +41,7 @@ head(students)
 ```
 
 
+
 (a) **Looking at the variables above, is there a variable that will definitely not be part of any meaningful analysis? If yes, which one, and remove this variable from your data frame. **
 
 The `Student` variable will definitly not be part of any meaningful analysis because it is simply an indexing variable. 
