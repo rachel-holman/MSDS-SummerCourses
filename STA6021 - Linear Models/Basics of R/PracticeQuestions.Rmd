@@ -1,0 +1,209 @@
+---
+title: "Practice Questions over R Basics"
+author: "Rachel Holman"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Getting Started with R
+
+#### 1. The mtcars dataset comes built-in with R. The dataset was extracted from the 1974 Motor Trend US magazine and comprises several characteristics of automobile design and performance for 32 automobiles (1973 to 74 models).
+
+**(a)** Read this data in and assign it to an object called cars.df
+```{r}
+cas.df <- mtcars
+```
+
+
+**(b)** Use the environment window and report how many observations and variables are in this dataset.
+
+- *There are 32 observations and 11 variables in this data set.*
+
+
+
+#### 2. Download the dataset “students.txt” from Collab. The dataset contains information on students taking an introductory statistics class at a large public university.
+
+**(a)** Read this data in and assign it to an object called students.df
+```{r}
+students.df <- read.table("students.txt", header=TRUE)
+```
+
+
+**(b)** Use the environment window and report how many observations and variables are in this dataset.
+
+- *There are 249 observations and 9 viariables in this data set.*
+
+
+
+#### 3. Install the following packages:
+(a) tidyverse
+(b) faraway
+(c) MASS
+(d) leaps
+(e) ROCR
+(f) nycflights13
+(g) gapminder
+(h) palmerpenguins
+
+
+```{r, eval=FALSE}
+install.packages("tidyverse")
+install.packages("faraway")
+install.packages("MASS")
+install.packages("leaps")
+install.packages("ROCR")
+install.packages("nycflights13")
+install.packages("gapminder")
+install.packages("palmerpenguins")
+```
+
+
+
+#### 4. Load the faraway package, and read in the dataset called cornnit and assign it to an object called corn.df
+
+```{r}
+library(faraway)
+cord.df <- cornnit
+```
+
+
+---
+
+## Data Types & Stuctures in R
+
+#### 5. Are the following valid names for objects in R?
+
+**(a)** 2020_Major
+
+- *NO*, valid object names cannot begin with a number
+
+**(b)** .2020.Age
+
+- *NO*, if an object name begins with ".", it cannot be followed by a number
+
+**(c)** #Courses.2020
+
+- *NO*, valid object names cannot use "#"
+
+**(d)** _courses_2020
+
+- *NO*, valid object names cannot begin with "_"
+
+**(e)** Fav_Sport20
+
+- *YES*, this is a valid object name
+
+**(f)** major 2020
+
+- *NO*, valid object names cannot contain a space
+
+**(g)** age(2020)
+
+- *NO*, valid object names cannot use "(" or ")"
+
+**(h)** FavSport_2020
+
+- *YES*, this is a valid object name
+
+
+
+
+#### 6. Create a numeric vector with the following 10 values: 13, 91, 36, 95, 9, 3, 61, 20, 22, 97
+
+**Assign these 10 values to a vector called practice. Use R to find out if practice is a character, numeric, or logical type.***
+
+```{r}
+practice <- c(13, 91, 36, 95, 9, 3, 61, 20, 22, 97)
+class(practice)
+```
+
+
+
+
+#### 7. For each of the following, determine if they are TRUE or FALSE. Try answering first without using R, then use R to confirm.
+
+**(a)** practice[5]==5 *(FALSE)*
+```{r}
+practice[5]==5
+```
+
+
+**(b)** practice[10]!=97 *(FALSE)*
+```{r}
+practice[10]!=97
+```
+
+
+**(c)** (practice[1]+practice[2])<104 *(FALSE)*
+```{r}
+(practice[1]+practice[2])<104 
+```
+
+
+**(d)** (practice[1]+practice[2])<=104 *(TRUE)*
+```{r}
+(practice[1]+practice[2])<=104
+```
+
+
+**(e)** (practice[2]==91) & (practice[9]==22) *(TRUE)*
+```{r}
+(practice[2]==91) & (practice[9]==22)
+```
+
+
+**(f)** (practice[5]<9) | (practice[6]>=4) *(FALSE)*
+```{r}
+(practice[5]<9) | (practice[6]>=4)
+```
+
+
+
+
+#### 8. Create the following matrix in R and assign it to the object Mat.A.
+$$\begin{bmatrix} 4 \  1 \ 3 \\ 6 \ 2 \ 1\end{bmatrix}$$
+
+```{r}
+Mat.A <- matrix(c(4,6,1,2,3,1),nrow=2,ncol=3)
+Mat.A
+```
+
+
+**(a)** Give the following column names to Mat.A: “Huey”, “Dewey”, “Louie”.
+```{r}
+colnames(Mat.A) <- c("Huey", "Dewey", "Louie")
+Mat.A
+```
+
+
+**(b)** Without using R, what is the output if we type Mat.A[2,1]?
+
+- *6*
+
+**(c)** Without using R, what is the output if we type dim(Mat.A)?
+
+- *2 3*
+
+
+
+
+#### 9. Convert the vector practice to a factor. What is the order of the levels in this factor?
+
+```{r}
+practice2<-factor(practice)
+practice2
+```
+
+*Levels in order: 3, 9, 13, 20, 22, 36, 61, 91, 95, 97*
+
+---
+
+## R Markdown
+
+#### 10. Type up your answers to these questions using R Markdown, and output an HTML file.
+
+
+
