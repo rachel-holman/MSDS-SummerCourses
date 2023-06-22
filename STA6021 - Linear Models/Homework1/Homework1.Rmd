@@ -78,6 +78,7 @@ students%>%
 
 ```
 
+The median GPA is 3.2, the median number of days per month spent at parties is 8, the median number of days per month students have at least 2 alcoholic drinks is 8, and the median number of hours spent studying per week is 14.
 
 (e) **Compare the mean, standard deviation, and median StudyHrs between female and male students. Based on these values, comment on what you can glean about time spent studying between female and male students.**
 
@@ -132,6 +133,7 @@ There are *29* students who have low GPAs (below 3.0), party a lot (more than 8 
 table(students$GPA.cat)
 ```
 
+There are 87 students with a GPA categorized as "low", 85 with a GPA categorized as "moderate", and 70 with "high" GPA values.
 
 (j) **Produce a bar chart that summarizes the number of students in each level of GPA.cat. Be sure to add appropriate labels and titles so that the bar chart conveys its message clearly to the reader. Be sure to remove the bar corresponding to the missing values.**
 
@@ -181,22 +183,23 @@ Female students seem to be harder working than male students because they earn h
 
 (n) **Create a bar chart to explore the proportion of GPA categories for female and male students. Be sure to remove the bar corresponding to the missing values.**
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 pctgenderGPA<-substudents%>%
-  group_by(Gender, GPA.cat)%>%
+  group_by(GPA.cat, Gender)%>%
   summarize(Counts=n())%>%
   mutate(Percent=Counts/nrow(substudents))
 
-ggplot(pctgenderGPA, aes(x=GPA.cat, y=Percent, fill=Gender))+
-  geom_bar(stat="identity", position="dodge")+
+ggplot(pctgenderGPA, aes(x=Gender, y=Percent, fill=GPA.cat))+
+  geom_bar(stat="identity", position="fill")+
   theme(plot.title = element_text(hjust = 0.5))+
-  labs(x="GPA Category", y="Proportion of Students", title="GPA Categories by Gender")
+  labs(x="Gender", y="Proportion of Students", title="GPA Categories by Gender")
 ```
 
+The plot generated above shows that female students have a lower proportion of "low" GPA values than male students. Females have a larger proportion of "moderate" and "high" grades thsan male students.
 
 (o) **Create a similar bar chart similar to the bar chart in part 1n, but split by smoking status. Comment on this bar chart.**
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 genderGPApctSmoke<-substudents%>%
   group_by(Gender, GPA.cat, Smoke)%>%
   summarize(Counts=n())%>%
@@ -204,13 +207,14 @@ genderGPApctSmoke<-substudents%>%
 
 genderGPApctSmoke$Smoke <- recode_factor(genderGPApctSmoke$Smoke, "No"="Non-Smoker", "Yes"="Smoker")
 
-ggplot(genderGPApctSmoke, aes(x=GPA.cat, y=Percent, fill=Gender))+
-  geom_bar(stat="identity", position="dodge")+
+ggplot(genderGPApctSmoke, aes(x=Gender, y=Percent, fill=GPA.cat))+
+  geom_bar(stat="identity", position="fill")+
   facet_grid(~Smoke) +
   theme(plot.title = element_text(hjust = 0.5))+
-  labs(x="GPA Category", y="Proportion of Students", title="GPA Categories by Gender and Smoking Status")
+  labs(x="Gender", y="Proportion of Students", title="GPA Categories by Gender and Smoking Status")
 ```
 
+The plot above shows very clearly that students who smoke have a much larger proportion of "low" GPA values and smaller proportion of "high" GPA values. In both the smoking and non-smoking categories, female students have larger proportions od "moderate" and "high" GPAs.
 
 (p) **Create a scatterplot of GPA against the amount of hours spent studying a week. How would you describe the relationship between GPA and amount of time spent studying?**
 
@@ -223,6 +227,7 @@ ggplot(naomitstudents, aes(x=GPA,y=StudyHrs))+
   labs(x="GPA", y="Study Hours per Week", title="Scatterplot of Study Hours per Week against GPA")
 ```
 
+Looking at the scatter plot above, it seems that there is a very slight positive linear association between study hours and GPA. In other words, students who spent more hours studying per week seem to have higher GPA values.
 
 (q) **Edit the scatterplot from part 1p to include information about the number of days the student parties in a month.**
 
@@ -318,7 +323,7 @@ highestfatalty <- latest %>%
   arrange(desc(death.rate))
 head(highestfatalty, 10)
 ```
-These counties all have fewer than 70 deaths total.
+These counties all have fewer than 70 deaths total. 
 
 (f) **Display the counties with the 10 highest case fatality rates among counties with at least 100,000 cases. Be sure to also display the number of cases and deaths in these counties, as well as the state the counties belong to.**
 
@@ -386,7 +391,7 @@ virginia.rate<- state.level %>%
   select(state.rate)
 virginia.rate
 ```
-
+The case fatality rate in Virginia is 1.66%. In other words, 1.66% of covid cases in Virginia resulted in death as of June 3rd 2021.
 
 (d) **What is the case fatality rate in Puerto Rico?**
 
@@ -396,7 +401,7 @@ pr.rate<- state.level %>%
   select(state.rate)
 pr.rate
 ```
-
+There were no deaths recorded in the data set for Puerto Rico through June 3rd 2021, so the case fatality rate is 0%.
 
 (e) **Which states have the 10 highest case fatality rates?**
 
@@ -432,15 +437,16 @@ head(fullstatedata)
 (h) **Pick at least two variables from the dataset and create a suitable visualization of the variables. Comment on what the visualization reveals. You may create new variables based on existing variables, and describe how you created the new variables.**
 
 ```{r, message=FALSE, warning=FALSE}
-ggplot(fullstatedata, aes(x=Population,y=deaths, size=cases))+
-  geom_point(alpha=0.5, color="blue")+
+ggplot(fullstatedata, aes(x=Population,y=deaths, size=cases, color=Election))+
+  geom_point(alpha=0.5)+
+  geom_smooth(method = "lm", se=FALSE, color="red", size=0.5)+
   theme(plot.title = element_text(hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5))+
-  labs(x="Population", y="Death Count", title="Scatterplot of Death Count against State Populations", subtitle = "Point Size Corresponds to Case Count")
+  labs(x="Population", y="Death Count", title="Scatterplot of Death Count against State Populations", subtitle = "Point Size Corresponds to Case Count, Colored By 2020 Election Choice")
 ```
 
 
-The visual created above shows that there is a positive linear correlation between population size and death count. Additionally, the states with larger death counts also have a larger case count on average.
+The visual created above shows that there is a positive linear association between population size and death count. Additionally, the states with larger death counts also have a larger case count on average.
 
 
 ----
@@ -481,7 +487,7 @@ ggplot(penguins, aes(x=flipper_length_mm,y=body_mass_g, color=species))+
   labs(x="Flipper Length (mm)", y="Body Mass (grams)", title="Scatterplot of Pengin Body Mass against Flipper Length", subtitle = "Each Color Represents a Different Species")
 ```
 
-This scatterplot 
+This scatterplot shows that although each species may be well suited for a simple linear regression, all the points seem to follow a nonlinear path overall.
 
 (c) **Regardless of your answer to the previous part, produce a scatterplot of body mass and flipper length for Gentoo penguins. Based on the appearance of the plot, does a simple linear regression appear reasonable for the data?**
 
@@ -496,6 +502,7 @@ ggplot(gentoo, aes(x=flipper_length_mm,y=body_mass_g))+
   labs(x="Flipper Length (mm)", y="Body Mass (grams)", title="Scatterplot of Gentoo Pengin Body Mass against Flipper Length")
 ```
 
+Gentoo penguin body mass (in grams) and flipper length (in mm) seem to be positively linearly associated, which suggests that a simple linear regression does appear reasonable for the data. Additionally, the observations are fairly evenly scattered on both sides of the regression line, so a linear association exists.
 
 (d) **What is the correlation between body mass and flipper length for Gentoo penguins. Interpret this correlation contextually. How reliable is this interpretation?**
 
