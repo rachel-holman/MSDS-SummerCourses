@@ -41,7 +41,6 @@ head(students)
 ```
 
 
-
 (a) **Looking at the variables above, is there a variable that will definitely not be part of any meaningful analysis? If yes, which one, and remove this variable from your data frame. **
 
 The `Student` variable will definitly not be part of any meaningful analysis because it is simply an indexing variable. 
@@ -129,32 +128,122 @@ There are *29* students who have low GPAs (below 3.0), party a lot (more than 8 
 
 (i) **Produce a frequency table of the number of students in each level of GPA.cat. If needed, be sure to arrange the order of the output appropriately. How many students are in each level of GPA.cat?**
 
+```{r}
+table(students$GPA.cat)
+```
+
 
 (j) **Produce a bar chart that summarizes the number of students in each level of GPA.cat. Be sure to add appropriate labels and titles so that the bar chart conveys its message clearly to the reader. Be sure to remove the bar corresponding to the missing values.**
+
+```{r}
+substudents <- subset(students, GPA.cat != "NA")
+#substudents <- students %>% filter(!is.na(GPA.cat))
+
+ggplot(substudents, aes(x=GPA.cat))+
+  geom_bar()+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x="GPA Category", y="Number of Students", title="Distribution of GPA Categories")
+
+```
 
 
 (k) **Create a similar bar chart as you did in part 1j, but with proportions instead of counts. Be sure to remove the bar corresponding to the missing values.**
 
+```{r}
+pctGPA<-substudents%>%
+  group_by(GPA.cat)%>%
+  summarize(Counts=n())%>%
+  mutate(Percent=Counts/nrow(substudents))
+
+ggplot(pctGPA, aes(x=GPA.cat, y=Percent))+
+  geom_bar(stat="identity")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x="GPA Category", y="Proportion of Students", title="Distribution of GPA Categories")
+```
+
 
 (l) **Produce a frequency table for the number of female and male students and the GPA category.**
+
+```{r}
+genderGPAcnt <- table(students$Gender, students$GPA.cat)
+genderGPAcnt
+```
 
 
 (m) **Produce a table for the percentage of GPA category for each gender. For the percentages, round to 2 decimal places. Comment on the relationship between gender and GPA category.**
 
+```{r}
+genderGPApct <- round(prop.table(genderGPAcnt, 1) * 100, 2)
+genderGPApct
+```
+
+Female students seem to be harder working than male students because they earn higher GPA's overall. More students with high and moderate GPA's are females while male students have more of the low GPA's.
 
 (n) **Create a bar chart to explore the proportion of GPA categories for female and male students. Be sure to remove the bar corresponding to the missing values.**
+
+```{r}
+pctgenderGPA<-substudents%>%
+  group_by(Gender, GPA.cat)%>%
+  summarize(Counts=n())%>%
+  mutate(Percent=Counts/nrow(substudents))
+
+ggplot(pctgenderGPA, aes(x=GPA.cat, y=Percent, fill=Gender))+
+  geom_bar(stat="identity", position="dodge")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x="GPA Category", y="Proportion of Students", title="GPA Categories by Gender")
+```
 
 
 (o) **Create a similar bar chart similar to the bar chart in part 1n, but split by smoking status. Comment on this bar chart.**
 
+```{r}
+genderGPApctSmoke<-substudents%>%
+  group_by(Gender, GPA.cat, Smoke)%>%
+  summarize(Counts=n())%>%
+  mutate(Percent=Counts/nrow(substudents))
+
+genderGPApctSmoke$Smoke <- recode_factor(genderGPApctSmoke$Smoke, "No"="Non-Smoker", "Yes"="Smoker")
+
+ggplot(genderGPApctSmoke, aes(x=GPA.cat, y=Percent, fill=Gender))+
+  geom_bar(stat="identity", position="dodge")+
+  facet_grid(~Smoke) +
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x="GPA Category", y="Proportion of Students", title="GPA Categories by Gender and Smoking Status")
+```
+
 
 (p) **Create a scatterplot of GPA against the amount of hours spent studying a week. How would you describe the relationship between GPA and amount of time spent studying?**
+
+```{r}
+naomitstudents <- na.omit(students)
+
+ggplot(naomitstudents, aes(x=GPA,y=StudyHrs))+
+  geom_point(alpha=0.5)+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x="GPA", y="Study Hours per Week", title="Scatterplot of Study Hours per Week against GPA")
+```
 
 
 (q) **Edit the scatterplot from part 1p to include information about the number of days the student parties in a month.**
 
+```{r}
+ggplot(naomitstudents, aes(x=GPA,y=StudyHrs, size=PartyNum))+
+  geom_point(alpha=0.5)+
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))+
+  labs(x="GPA", y="Study Hours per Week", title="Scatterplot of Study Hours per Week against GPA", subtitle = "Point Size Corresponds to Party Days per Month")
+```
 
-(r) **Edit the scatterplot from part 1q to include information about whether thes tudent smokes or not.**
+
+(r) **Edit the scatterplot from part 1q to include information about whether the student smokes or not.**
+
+```{r}
+ggplot(naomitstudents, aes(x=GPA,y=StudyHrs, size=PartyNum, color=Smoke))+
+  geom_point(alpha=0.5)+
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))+
+  labs(x="GPA", y="Study Hours per Week", title="Scatterplot of Study Hours per Week against GPA", subtitle = "By Party Days per Month and Smoking Status")
+```
 
 
 
@@ -163,6 +252,9 @@ There are *29* students who have low GPAs (below 3.0), party a lot (more than 8 
 #### 2. Download the dataset UScovid.csv from Canvas. The dataset was released by The New York Times and contains data on cumulative (accruing) counts of coronavirus cases and deaths in the United States, at the state and county level, over each day from Jan 21, 2020 to June 3 2021. You may read more about the data and the variable descriptions here (please note the dataset is regularly updated, we will use the file on Canvas).
 
 ```{r}
+#clear R environment before next problem
+#rm(list = ls())
+
 covid <- read.csv("UScovid.csv", header=TRUE) 
 head(covid)
 ```
@@ -337,11 +429,18 @@ head(fullstatedata)
 ```
 
 
-(h) **Pick at least two variables from the dataset and create a suitable visualization of the variables. Comment on what the visualization reveals. You may create new variables based on existing variables, and decribe how you created the new variables.**
+(h) **Pick at least two variables from the dataset and create a suitable visualization of the variables. Comment on what the visualization reveals. You may create new variables based on existing variables, and describe how you created the new variables.**
 
-```{r}
-
+```{r, message=FALSE, warning=FALSE}
+ggplot(fullstatedata, aes(x=Population,y=deaths, size=cases))+
+  geom_point(alpha=0.5, color="blue")+
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))+
+  labs(x="Population", y="Death Count", title="Scatterplot of Death Count against State Populations", subtitle = "Point Size Corresponds to Case Count")
 ```
+
+
+The visual created above shows that there is a positive linear correlation between population size and death count. Additionally, the states with larger death counts also have a larger case count on average.
 
 
 ----
@@ -349,6 +448,9 @@ head(fullstatedata)
 #### 4. We will look at a data set concerning adult penguins near Palmer station, Antarctica. The data set, penguins comes from the palmerpenguins package. Be sure to install and load the palmerpenguins package. I recommend reading the documentation of this data set by typing ?penguins
 
 ```{r}
+#clear R environment before next problem
+#rm(list = ls())
+
 library(palmerpenguins)
 head(penguins)
 ```
@@ -356,49 +458,149 @@ head(penguins)
 
 *We will explore the relationship between the response variable body mass (in grams), body_mass_g, and the predictor length of the flippers (in mm), flipper_length_mm.*
 
-(a) **Produce a scatterplot of the two variables. How would you describe the relation- ship between the two variables? Be sure to label the axes and give an appropriate title. Based on the appearance of the plot, does a simple linear regression appear reasonable for the data?**
+(a) **Produce a scatterplot of the two variables. How would you describe the relationship between the two variables? Be sure to label the axes and give an appropriate title. Based on the appearance of the plot, does a simple linear regression appear reasonable for the data?**
 
+```{r, message=FALSE, warning=FALSE}
+ggplot(penguins, aes(x=flipper_length_mm,y=body_mass_g,))+
+  geom_point(alpha=0.5)+
+  geom_smooth(method = "lm", se=FALSE)+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x="Body Mass (grams)", y="Flipper Length (mm)", title="Scatterplot of Pengin Body Mass against Flipper Length")
+```
+
+Penguin body mass (in grams) and flipper length (in mm) seem to be very positively linearly associated, which suggests that a simple linear regression does appear reasonable for the data. Additionally, the observations are fairly evenly scattered on both sides of the regression line, so a linear association exists.
 
 (b) **Produce a similar scatterplot, but with different colored plots for each species. How does this scatterplot influence your answer to the previous part?**
 
+```{r, message=FALSE, warning=FALSE}
+ggplot(penguins, aes(x=flipper_length_mm,y=body_mass_g, color=species))+
+  geom_point(alpha=0.5)+
+  geom_smooth(method = "lm", se=FALSE)+
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))+
+  labs(x="Flipper Length (mm)", y="Body Mass (grams)", title="Scatterplot of Pengin Body Mass against Flipper Length", subtitle = "Each Color Represents a Different Species")
+```
+
+This scatterplot 
 
 (c) **Regardless of your answer to the previous part, produce a scatterplot of body mass and flipper length for Gentoo penguins. Based on the appearance of the plot, does a simple linear regression appear reasonable for the data?**
 
+```{r, message=FALSE, warning=FALSE}
+gentoo <- penguins %>%
+  filter(species=="Gentoo")
 
-(d) **What is the correlation between body mass and flipper length for Gentoo pen- guins. Interpret this correlation contextually. How reliable is this interpretation?**
+ggplot(gentoo, aes(x=flipper_length_mm,y=body_mass_g))+
+  geom_point(alpha=0.5)+
+  geom_smooth(method = "lm", se=FALSE)+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x="Flipper Length (mm)", y="Body Mass (grams)", title="Scatterplot of Gentoo Pengin Body Mass against Flipper Length")
+```
+
+
+(d) **What is the correlation between body mass and flipper length for Gentoo penguins. Interpret this correlation contextually. How reliable is this interpretation?**
+
+```{r}
+cor(gentoo$body_mass_g, gentoo$flipper_length_mm, use = "complete.obs")
+```
+
+The correlation between body mass and flipper length for Gentoo penguins is 0.7026665.  
 
 
 *For the rest of the questions, assume the assumptions to perform linear regression on Gentoo penguins are met.*
 
 (e) **Use the lm() function to fit a linear regression for body mass and flipper length for Gentoo penguins. Write out the estimated linear regression equation.**
 
+```{r}
+gentoolm<-lm(body_mass_g~flipper_length_mm, data=gentoo)
+
+summary(gentoolm)
+```
+
+$Y = \beta_{0} + \beta_{1}X + e$ = $(body\_mass\_g) = -6787.281 + 54.623(flipper\_length\_mm) + 360.2$
 
 (f) **Interpret the estimated slope contextually.**
 
+```{r}
+##extract slope
+summary(gentoolm)$coefficients[2,1]
+```
+
+$\hat B_1$ = 54.6225. The estimated slope informs us the the predicted body mass increases by 54.6225 grams per unit (1 mm) increase in flipper length.
 
 (g) **Does the estimated intercept make sense contextually?**
 
+```{r}
+##extract intercept
+summary(gentoolm)$coefficients[1,1]
+```
+
+$\hat B_0$ = -6787.281. For gentoo penguins with no flipper length, their predicted body mall is -6787.281 grams This value does **not** make sense contextually because a penguin cannot have 0 millimeter flippers. The minimum flipper length value in our data is 203 millimeters
 
 (h) **Report the value of ** $R^2 $ **from this linear regression, and interpret its value contextually.**
 
+```{r}
+#extract r2
+summary(gentoolm)$r.squared
+```
+
+$R^2$ = 0.4937402. The coefficient of determination informs us that about 49.37% of the variation in body mass (grams) can be explained by flipper length (mm).
 
 (i) **What is the estimated value for the standard deviation of the error terms for this regression model, ** $\hat\sigma?$
+
+```{r}
+#extract sigma
+summary(gentoolm)$sigma
+```
+
+s = 360.1676, is the estimate of the standard deviation of the error terms. This is reported as residual standard error in R. Squaring this gives the estimated variance.
 
 
 (j) **For a Gentoo penguin which has a flipper length of 220mm, what is its predicted body mass in grams?**
 
+```{r}
+##create data point for prediction
+newdata1<-data.frame(flipper_length_mm=220)
+##predicted body mass when x=200
+predict(gentoolm,newdata1)
+```
+
+This gentoo penguin’s predicted body mass is 5229.67 grams.
 
 (k) **Produce the ANOVA table for this linear regression. Using only this table, calculate the value of ** $R^2.$
 
+```{r}
+anova.tab<-anova(gentoolm)
+anova.tab
+
+SST<-sum(anova.tab$"Sum Sq")
+
+R2 <- anova.tab$"Sum Sq"[1]/SST
+R2
+```
+The $R^2$ value of 0.4937402 was computed using only the ANOVA table by first computing the Sum of Squares Total ($SS_R + SS_{res}$), then dividing the $SS_R$ by the $SS_T$. 
 
 (l) **What are the null and alternative hypotheses for the ANOVA F test?**
 
+$H_0$ : $\beta_1 = 0$ (The slope of the SLR is equal to 0)
+$H_A$ : $\beta_1 \neq 0$ (The slope of the SLR is not equal to 0)
 
 (m) **Explain how the F statistic of 118.01 is found.**
+
+The F statistic of 118.01 is found using by dividing the $MS_R$ by the $MS_{res}$: 
+
+```{r}
+anova.tab$`Mean Sq`[1]/anova.tab$`Mean Sq`[2]
+```
 
 
 (n) **Write an appropriate conclusion for the ANOVA F test for this simple linear regression model.**
 
+```{r}
+critval <- qf(1-0.05, 1, 123-2)
+critval
+```
+
+Since out test statistic is larger than the critical value, we reject the null hypothesis. Out data supports the claim that the slope is different from 0, or in other words, that there is a linear association between gentoo penguin flipper length (mm) and body mass (grams).
 
 (o) **Report the 95% confidence interval for the change in the predicted body mass (in grams) when flipper length increases by 1mm.**
 
@@ -419,11 +621,16 @@ head(penguins)
 
 #### 5. We will use the dataset “copier.txt” for this question. The Tri-City Office Equipment Corporation sells an imported copier on a franchise basis and performs preventive maintenance and repair service on this copier. The data have been collected from 45 recent calls on users to perform routine preventive maintenance service; for each call, Serviced is the number of copiers serviced and Minutes is the total number of minutes spent by the service person.
 
+```{r}
+copier <- read.table("copier.txt", header = TRUE)
+head(copier)
+```
+
 
 (a) **What is the response variable in this analysis? What is predictor in this analysis?**
 
 
-(b) **Produce a scatterplot of the two variables. How would you describe the relation- ship between the number of copiers serviced and the time spent by the service person?**
+(b) **Produce a scatterplot of the two variables. How would you describe the relationship between the number of copiers serviced and the time spent by the service person?**
 
 
 (c) **What is the correlation between the total time spent by the service person and the number of copiers serviced? Interpret this correlation contextually.**
