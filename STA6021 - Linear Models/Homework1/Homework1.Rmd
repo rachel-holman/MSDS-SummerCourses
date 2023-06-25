@@ -2,7 +2,9 @@
 title: "Homework1"
 author: "Rachel Holman"
 date: "2023-06-20"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -510,7 +512,7 @@ Gentoo penguin body mass (in grams) and flipper length (in mm) seem to be positi
 cor(gentoo$body_mass_g, gentoo$flipper_length_mm, use = "complete.obs")
 ```
 
-The correlation between body mass and flipper length for Gentoo penguins is 0.7026665.  
+The correlation between body mass and flipper length for Gentoo penguins is 0.7026665 which is a positive, moderately strong linear correlation. This is not entirely reliable because there were incomplete, or NA, observations which had to be omitted. 
 
 
 *For the rest of the questions, assume the assumptions to perform linear regression on Gentoo penguins are met.*
@@ -523,7 +525,8 @@ gentoolm<-lm(body_mass_g~flipper_length_mm, data=gentoo)
 summary(gentoolm)
 ```
 
-$Y = \beta_{0} + \beta_{1}X + e$ = $(body\_mass\_g) = -6787.281 + 54.623(flipper\_length\_mm) + 360.2$
+$Y = \beta_{0} + \beta_{1}X + e$  
+$(body\_mass\_g) = -6787.281 + 54.623(flipper\_length\_mm) + 360.2$
 
 (f) **Interpret the estimated slope contextually.**
 
@@ -541,7 +544,7 @@ $\hat B_1$ = 54.6225. The estimated slope informs us the the predicted body mass
 summary(gentoolm)$coefficients[1,1]
 ```
 
-$\hat B_0$ = -6787.281. For gentoo penguins with no flipper length, their predicted body mall is -6787.281 grams This value does **not** make sense contextually because a penguin cannot have 0 millimeter flippers. The minimum flipper length value in our data is 203 millimeters
+$\hat B_0$ = -6787.281. For gentoo penguins with no flipper length, their predicted body mall is -6787.281 grams This value does **not** make sense contextually because a penguin cannot have 0 millimeter flippers. The minimum flipper length value in our data is 203 millimeters.
 
 (h) **Report the value of ** $R^2 $ **from this linear regression, and interpret its value contextually.**
 
@@ -588,8 +591,8 @@ The $R^2$ value of 0.4937402 was computed using only the ANOVA table by first co
 
 (l) **What are the null and alternative hypotheses for the ANOVA F test?**
 
-$H_0$ : $\beta_1 = 0$ (The slope of the SLR is equal to 0)
-$H_A$ : $\beta_1 \neq 0$ (The slope of the SLR is not equal to 0)
+$H_0$ : $\beta_1 = 0$ (The slope of the SLR is equal to 0, so the two variables are uncorrelated)  
+$H_A$ : $\beta_1 \neq 0$ (The slope of the SLR is not equal to 0, so the two variables are correlated)  
 
 (m) **Explain how the F statistic of 118.01 is found.**
 
@@ -607,21 +610,65 @@ critval <- qf(1-0.05, 1, 123-2)
 critval
 ```
 
-Since out test statistic is larger than the critical value, we reject the null hypothesis. Out data supports the claim that the slope is different from 0, or in other words, that there is a linear association between gentoo penguin flipper length (mm) and body mass (grams).
+Since out test statistic is larger than the critical value, we reject the null hypothesis. Our data supports the claim that the slope is different from 0, or in other words, that there is a linear association between gentoo penguin flipper length (mm) and body mass (grams).
 
 (o) **Report the 95% confidence interval for the change in the predicted body mass (in grams) when flipper length increases by 1mm.**
+
+```{r}
+confint(gentoolm,level = 0.95)
+```
+
+The 95% CI for $\beta_1$ is (44.66777, 64.57724). We have 95% confidence that for each additional millimeter in gentoo flipper length, the predicted body mass increases between 44.66777 grams and 64.57724 grams.
 
 
 (p) **Are your results from parts 4n and 4o consistent? Briefly explain.**
 
+Yes, the confidence interval excluded 0, so the results from parts 4n and 4o are consistant. Part 4n shows that a one unit increase in flipper length will have a non-zero impact on body mass. Part 4o shows that the slope, or change to body mass with a 1 unit increase in flipper length is between 44.66777 grams and 64.57724 grams. Since zero is not included in that confidence interval, we are 95% confident that the slope is not equal to 0.
+
 
 (q) **Estimate the mean body mass (in grams) for Gentoo penguins with flipper lengths of 200mm. Also report the 95% confidence interval for the mean body mass (in grams) for Gentoo penguins with flipper lengths of 200mm.**
 
+```{r}
+newgentoo<-data.frame(flipper_length_mm=200)
+predict(gentoolm,newgentoo,level=0.95, interval="confidence")
+```
+
+The estimate for the mean body mass (in grams) for Gentoo penguins with flipper lengths of 200mm is 4137.22 grams.  
+The 95% CI for the mean body mass in grams for Gentoo penguins with a flipper length of 200 millimeters is (3954.446, 4319.993). We have 95% confidence the mean body mass in grams for Gentoo penguins with a flipper length of 200 millimeters is between 3954.446 grams and 4319.993 grams. 
 
 (r) **Report the 95% prediction interval for the body mass (in grams) of a Gentoo penguin with flipper length of 200mm.**
 
+```{r}
+predict(gentoolm,newgentoo,level=0.95, interval="prediction")
+```
+
+We have 95% confidence that for a Gentoo penguin with a flipper length of 200 mm, this penguins’s body mass is between 3401.121 grams and 4873.319 grams. We note that the 95% prediction interval is wider than the 95% confidence interval because prediction intervals account for more uncertainty for individual outcomes.  
 
 (s) **A researcher hypothesizes that for Gentoo penguins, the predicted body mass increases by more than 50 g for each additional mm in flipper length. Conduct an appropriate hypothesis test. What is the null and alternative hypotheses, test statistic, and conclusion?**
+
+```{r}
+n=123
+b1 = 50
+b1hat = summary(gentoolm)$coefficients[2,1]
+seB1 = summary(gentoolm)$coefficients[2,2]
+t = (b1hat - b1)/(seB1)
+t
+
+pvalue= 1 - pt(t, n-2)
+pvalue
+
+critval = qt(0.95, n-2)
+critval
+```
+
+$H_0$ : $\beta_1 = 50$ (The slope of the SLR is equal to 50, or the predicted body mass increases by exactly 50 g for each additional mm in flipper length)  
+$H_A$ : $\beta_1 \gt 50$ (The slope of the SLR is greater than 50, or the predicted body mass increases by more than 50 g for each additional mm in flipper length)  
+
+Test statistic (t) = 0.9193074  
+P-value = 0.1798819  
+critical value = 1.657544  
+
+Since the p-value is larger than $\alpha = 0.05$ and the critical value is larger than the test statistic, we fail to reject $H_0$. The data does not support $H_A$ that the predicted body mass increases by more than 50 g for each additional mm in flipper length.
 
 
 ----
@@ -636,47 +683,143 @@ head(copier)
 
 (a) **What is the response variable in this analysis? What is predictor in this analysis?**
 
+In this analysis, `Minutes` is the response variable and `Services` serves as the predictor.
 
 (b) **Produce a scatterplot of the two variables. How would you describe the relationship between the number of copiers serviced and the time spent by the service person?**
 
+```{r}
+ggplot(copier, aes(x=Serviced,y=Minutes))+
+  geom_point(alpha=0.5)+
+  geom_smooth(method = "lm", se=FALSE)+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x="Number of Copier Serviced", y="Service Time in Minutes", title="Scatterplot of Service Time against Number of Copiers Serviced")
+```
+
+The number of copiers serviced and the time spent by the service person seem to be very strongly positively linearly associated, which suggests that a simple linear regression would be reasonable for the data. Additionally, the observations are fairly evenly scattered on both sides of the regression line, so a linear association exists.
 
 (c) **What is the correlation between the total time spent by the service person and the number of copiers serviced? Interpret this correlation contextually.**
+
+```{r}
+cor(copier$Serviced, copier$Minutes)
+```
+
+The correlation between the total time spent by the service person and the number of copiers serviced is 0.978517 which is a very strong, positive linear association.  
 
 
 (d) **Can the correlation found in part 5c be interpreted reliably? Briefly explain.**
 
+The correlation of 0.978517 can be interpreted to show that there is a very strong, positive linear association between the total time spent by the service person and the number of copiers serviced. As the number of copiers to be serviced increases, so too does the amount of time a service person spends.
 
 (e) **Use the lm() function to fit a linear regression for the two variables. Where are the values of ** $\hat\beta_1, \hat\beta_0, R^2, and \ \hat\sigma^2 $ **for this linear regression?**
 
+```{r}
+copierlm <- lm(Minutes~ Serviced, data=copier)
+summary(copierlm)$coefficients[1,1]
+summary(copierlm)$coefficients[2,1]
+summary(copierlm)$r.squared
+(summary(copierlm)$sigma)^2
+```
+$\hat \beta_0$ = -0.5801567  
+$\hat \beta_1$ = 15.03525  
+$R^2$ = 0.9574955  
+$\hat {\sigma} ^2$ = 79.45063  
 
 (f) **Interpret the values of ** $\hat\beta_1 and \ \hat\beta_0$ **contextually. Does the value of ** $\hat\beta_0$ **make sense in this context?**
 
+$\hat\beta_1$ = 15.03525. The estimated slope informs us the the predicted service time increases by 15.03525 minutes per one unit increase in the number of copiers that need to be serviced.
+
+$\hat \beta_0$ = -0.5801567.  When there are no copiers that need to be services, the total time spent by the service person is -0.5801567 minutes. This value does **not** make sense in this context because it is impossible to have a nugative amount of minutes, and the minimum number of copiers serviced in this dataset is 1. This is an instance of extrapolating.
 
 (g) **Use the anova() function to produce the ANOVA table for this linear regression. What is the value of the ANOVA F statistic? What null and alternative hypotheses are being tested here? What is a relevant conclusion based on this ANOVA F statistic?**
 
+```{r}
+anova.tab<-anova(copierlm)
+anova.tab
+
+critval <- qf(1-0.05, 1, 123-2)
+critval
+```
+$H_0$ : $\beta_1 = 0$ (The slope of the SLR is equal to 0, so the two variables are uncorrelated)  
+$H_A$ : $\beta_1 \neq 0$ (The slope of the SLR is not equal to 0, so the two variables are correlated)
+
+The ANOVA F statistic is 968.66 which is extremely high. Because it is larger than the critical value (3.919465), we reject the null hypothesis. Our data supports the claim that the slope is different from 0, or in other words, that there is a linear association between the total time spent by the service person and the number of copiers serviced.
 
 (h) **Suppose a service person is sent to service 5 copiers. Obtain an appropriate 95% interval that predicts the total service time spent by the service person.**
 
+```{r}
+newdata2<-data.frame(Serviced=5)
+predict(copierlm, newdata2, level=0.95, interval="confidence")
+```
 
+We have 95% confidence that for a routine preventive maintenance service person with 5 copiers to service, the worker's total time spend servicing the copiers is between 71.91422 minutes and 77.27794 minutes.
 
 ----
 
 #### 6. (You may only use R as a simple calculator or to find p-values or critical values) Suppose that for n = 6 students, we want to predict their scores on the second quiz using scores from the first quiz. The estimated regression line is
 $$\hat y = 20 + 0.8x.$$
 
-(a) **For each individual observation, calculate its predicted score on the second quiz $\hat y_i$ and the residual **$e_i$. **You may show your results in the table below. **
+(a) **For each individual observation, calculate its predicted score on the second quiz** $\hat y_i$ **and the residual **$e_i$. **You may show your results in the table below. **
+
+
+Predicted/Fitted values: $\hat  {y_i} = 20 +0.8(x_i)$
+
+Residuals: $e_i = y_i − \hat  {y_i}$
+
+
++---------------+----+----+----+----+----+----+
+| $x_i$         | 70 | 75 | 80 | 80 | 85 | 90 |
++---------------+----+----+----+----+----+----+
+| $y_i$         | 75 | 82 | 80 | 86 | 90 | 91 |
++---------------+----+----+----+----+----+----+
+| $\hat y_i$    | 76 | 80 | 84 | 84 | 88 | 92 |
++---------------+----+----+----+----+----+----+
+| $e_i$         | -1 |  2 | -4 |  2 |  2 | -1 |
++---------------+----+----+----+----+----+----+
+
 
 
 (b) **Complete the ANOVA table for this dataset below.**
 
+For reference:
 
-(c) **Calculate the sample estimate of the variance σ2 for the regression model.**
+|             | DF  | SS                          | MS                       |  F-stat               | p-value |
+|:-----------:|:---:|:---------------------------:|:------------------------:|:---------------------:|:-------:|
+| Regression  | 1   | $\sum(\hat{y_i}-\bar y)^2$  | $SS_R\over df_R$         | $MS_R \over MS_{res}$ |  0.0099 |
+| Residual    | n-2 | $\sum(y_i-\hat y)^2$       | $SS_{res}\over df_{res}$ |            ***        |    ***  |
+| Total       | n-1 | $\sum(y_i-\bar y)^2$       |            ***           |            ***        |    ***  |
 
+
+Therefore:
+
+
+|             | DF  | SS  | MS  | F-stat | p-value |
+|:-----------:|:---:|:---:|:---:|:------:|:-------:|
+| Regression  | 1   | 160 | 160 | 21.333 |  0.0099 |
+| Residual    | 4   | 30  | 7.5 |   ***  |    ***  |
+| Total       | 5   | 190 | *** |   ***  |    ***  |
+
+
+
+(c) **Calculate the sample estimate of the variance ** $\sigma^2$ **for the regression model.**
+
+$s^2 = MS_{res} = 7.5$
 
 (d) **What is the value of R2 here? Interpret this value in context.**
 
+$R^2 = {SS_R \over SS_T} = {160 \over 190} = 0.84210526$
+
+$R^2$ = 0.84210526. The coefficient of determination informs us that about 84.21% of the variation in a students' second quiz score can be explained by the students' first quiz score.
 
 (e) **Carry out the ANOVA F test. What is an appropriate conclusion?**
+
+$H_0$ : $\beta_1 = 0$ (The slope of the SLR is equal to 0, so the two variables are uncorrelated)  
+$H_A$ : $\beta_1 \neq 0$ (The slope of the SLR is not equal to 0, so the two variables are correlated)  
+
+```{r}
+qf(1-0.05, 1, 6-2)
+```
+
+The ANOVA F statistic is 21.333. Because it is larger than the critical value (found to be 7.708647), we reject the null hypothesis. Our data supports the claim that the slope is different from 0, or in other words, that there is a linear association between a students first quiz grade and their second quiz grade.
 
 
 ----
@@ -684,37 +827,106 @@ $$\hat y = 20 + 0.8x.$$
 #### 7. (You may only use R as a simple calculator or to find p-values or critical values) A substance used in biological and medical research is shipped by airfreight to users in cartons of 1000 ampules. The data consist of 10 shipments. The variables are number of times the carton was transferred from one aircraft to another during the shipment route (transfer), and the number of ampules found to be broken upon arrival (broken). We want to fit a simple linear regression. A simple linear regression model is fitted using R. The corresponding output from R is shown next, with some values missing.
 
 
-  Call:
-  lm(formula = broken ~ transfer)
-  Coefficients:
-              Estimate Std. Error t value Pr(>|t|)
-  (Intercept)  10.2000     0.6633  ______ ________ ***
-  transfer      4.0000     0.4690  ______ ________ ***
-  Residual standard error: 1.483 on 8 degrees of freedom
-  ...
-  Analysis of Variance Table
-  Response: broken
-            Df Sum Sq Mean Sq F value    Pr(>F)
-  transfer   1  160.0   160.0  ______ ________ ***
-  Residuals  8   17.6     2.2
+    Call:  
+    lm(formula = broken ~ transfer)  
+    Coefficients:  
+                Estimate Std. Error t value Pr(>|t|)  
+    (Intercept)  10.2000     0.6633  ______ ________ ***  
+    transfer      4.0000     0.4690  ______ ________ ***  
+    Residual standard error: 1.483 on 8 degrees of freedom  
+    ...  
+    Analysis of Variance Table  
+    Response: broken  
+              Df Sum Sq Mean Sq F value    Pr(>F)  
+    transfer   1  160.0   160.0  ______ ________ ***  
+    Residuals  8   17.6     2.2  
+  
   
   
 The following values are also provided for you, and may be used for the rest of this question: 
-x ̄ = 1, P(xi − x ̄)2 = 10.
-i=1
+$\bar x =1, \sum_{i=1}^{10}(x_i-\bar x)^2 = 10$
 
 
 (a) **Carry out a hypothesis test to assess if there is a linear relationship between the variables of interest.**
 
+$H_0$ : $\beta_1 = 0$ (The slope of the SLR is equal to 0, so the two variables are uncorrelated)  
+$H_A$ : $\beta_1 \neq 0$ (The slope of the SLR is not equal to 0, so the two variables are correlated)  
+
+```{r}
+# f-test: msr/msres
+#f = 160/2.2
+#f
+#qf(1-(0.05/2), 1, 8)
+
+# t-test
+b1 = 0
+b1hat = 4
+seB1 = 0.4690
+
+t = (b1hat-b1)/(seB1)
+t
+
+qt(1-(0.05/2), 8)
+2*pt(-t,8)
+```
+
+T-statistic (t) = 8.528785  
+critical value = 2.306004  
+p-value = 0.00002746895   
+
+Since the T-statistic of 8.528785 is larger than the critical value, we reject $H_0$ in favor of $H_A$. We have enough evidence to conclude that there is a linear relationship between the variables of interest.   
+
 
 (b) **Calculate a 95% confidence interval that estimates the unknown value of the population slope.**
+
+```{r}
+lwr <- 4 - qt(1-(0.05/2), 8)*0.4690
+upr <- 4 + qt(1-(0.05/2), 8)*0.4690
+cat("[", lwr, ",", upr,"]")
+```
 
 
 (c) **A consultant believes the mean number of broken ampules when no transfers are made is different from 9. Conduct an appropriate hypothesis test (state the hypotheses statements, calculate the test statistic, and write the corresponding conclusion in context, in response to his belief).**
 
+$H_0$ : $\mu = 9$ (The mean number of broken ampules when no transfers are made is equal to 9)  
+$H_A$ : $\mu \neq 9$ (The mean number of broken ampules when no transfers are made is different than 9)  
+
+
+```{r}
+b0 = 9
+b0hat = 10.2
+seB0 = 0.6633
+
+t = (b0hat-b0)/(seB0)
+t
+
+qt(1-(0.05/2), 8)
+2*pt(t,8)
+```
+
+Since the t-statistic of 1.809136 is smaller than the critical value and the p-value is larger than $\alpha=0.05$, we fail to reject $H_0$. We do not have enough evidence to conclude that the mean number of broken ampules when no transfers are made is different than 9.   
 
 (d) **Calculate a 95% confidence interval for the mean number of broken ampules and a 95% prediction interval for the number of broken ampules when the number of transfers is 2.**
 
+```{r}
+#Confidence interval
+muhat = 10.2 + 4*(2)
+clwr <- muhat - (qt(.975, 8)*(1.483)*sqrt((1/10)+(((2 - 1)^2) / 10)))
+cupr <- muhat + (qt(.975, 8)*(1.483)*sqrt((1/10)+(((2 - 1)^2) / 10)))
+cat("[", clwr, ",", cupr,"]")
+```
+
+The 95% CI for the mean number of broken ampules for a carton of 1000 ampules shipped with the number of transfers being 2 is (16.67062 , 19.72938). We have 95% confidence the mean number of broken ampules for a carton of 1000 ampules shipped with the number of transfers being 2 is between 16.67062 and 19.72938.
+
+
+```{r}
+#Prediction interval
+plwr <- muhat - (qt(.975, 8)*(1.483)*sqrt(1+ (1/10)+(((2 - 1)^2) / 10)))
+pupr <- muhat + (qt(.975, 8)*(1.483)*sqrt(1+ (1/10)+(((2 - 1)^2) / 10)))
+cat("[", plwr, ",", pupr,"]")
+```
+
+We have 95% confidence that for a carton of 1000 ampules shipped when the number of transfers is 2, the number of broken ampules is between 14.45379 and 21.94621.
 
 
 ----
@@ -722,23 +934,24 @@ i=1
 #### 8. Derive the least squares estimators of the simple linear regression model
 
 i.e. show that
-βˆ0 =y ̄−βˆ1x ̄ (1)
+$$\hat \beta_0 = \bar y - \hat β_1 \bar x$$
 and
-βˆ1 = i=1
-n
-P ( x i − x ̄ ) 2 i=1
-(2)
-n
-P(xi − x ̄)(yi − y ̄)
- 7
+$$\hat \beta_1 = {\sum_{i=1}^{n}(x_i - \bar x)(y_i - \bar y) \over \sum_{i=1}^{n}(x_i - \bar x)^2}$$
+
 
 Recall that we want to minimize the sum of squared errors, i.e., minimize
-n
-SS =X(y−yˆ)2, (3) res ii
-i=1
+$$SS_{res} = \sum_{i=1}^{n}(y_i - \hat y_i)^2,$$
 
-Hint 1: Note that yˆ = βˆ + βˆ x . i01i
-Hint 2: Take partial derivatives of (3) w.r.t. βˆ1 and βˆ0.
+Hint 1: Note that $\hat y_i = \beta_{0} + \beta_{1}x_i$
+
+Hint 2: Take partial derivatives of $SS_{res}$ with reference to $\hat \beta_1$, and $\hat \beta_0$.
+
 Hint 3: the following formulae may be useful, and may be used without proof:
-X(xi−x ̄)2 =Xx2i−nx ̄2, X(xi − x ̄)(yi − y ̄) = X xiyi − nx ̄y ̄.
-Hint 4: Work through showing equations (1) and (2) in order.
+
+$$\sum(x_i-\bar x)^2 = \sum x_i^2 - n\bar x^2$$,
+$$\sum(x_i-\bar x)(y_i-\bar y) = \sum x_iy_i - n\bar x \bar y$$.
+
+Hint 4: Work through showing equations $\hat \beta_0$ and $\hat \beta_1$ in order.
+
+
+![Problem 8 Written Solution](STAT6022.jpg)
