@@ -109,7 +109,7 @@ ggplot(mammals2, aes(x=logbody,y=logbrain))+
   labs(x="Log Body Weight", y="Log Brain Weight", title="Log Brain Weight Against Log Body Weight of Land Mammals")
 ```
 
-Now all of the assumptions appear to be resonably met!The points seem very positively linearly associated with relatively constant variance.
+Now all of the assumptions appear to be reasonably met! The points seem very positively linearly associated with relatively constant variance.
 
 (h) **Fit a simple linear regression to y∗ against x∗, and create the corresponding residual plot. Do any assumptions for simple linear regression appear to be violated? If so, which ones? If the assumptions are not met, repeat with a different transformation on the predictor until you are satisfied.**
 
@@ -212,7 +212,7 @@ summary(cornlm3)
 ```
 
 
-The regression question is $y^2= 9706.27 + 803.07*\sqrt{x}$ with y = corn yielded (bushel/acre) and x = nitrogen fertilizer applied (pounds/acre).
+The regression equation is $y^2= 9706.27 + 803.07*\sqrt{x}$ with y = corn yielded (bushel/acre) and x = nitrogen fertilizer applied (pounds/acre).
 
 
 
@@ -274,12 +274,12 @@ We have 95% confidence that the number of games won in a 14-game season for a te
 summary(nfl.1)
 ```
 
-$H_0$ : $\beta_0 = \beta_1 = \beta_2 = \beta_3 = 0$ (We could drop one or more of the variables from our model in the presence of the other variables.)  
+$H_0$ : $\beta_{X2} = \beta_{X7} = \beta_{X8} = 0$ (We could drop one or more of the variables from our model in the presence of the other variables.)  
 $H_A$ : At least one of the $\beta$ coefficients is not 0 (and therefore should not be dropped from the model)  
 
 F-statistic = 29.44 and p-value= $3.273*10^{-8}$
 
-Because this F-statistic is significantly large and the p-value of $3.273*10^{-8}$ is smaller than $alpha=0.05$, we $H_0$ in favor of $H_A$. In other words, we have enough evidence to conclude that we cannot drop any of the other predictors to simplify the model. The data supports the claim that the model with these three predictors is useful for predicting the number of wins during the 1976 season.
+Because this F-statistic is significantly large and the p-value of $3.273*10^{-8}$ is smaller than $\alpha=0.05$, we $H_0$ in favor of $H_A$. In other words, we have enough evidence to conclude that we cannot drop any of the other predictors to simplify the model. The data supports the claim that the model with these three predictors is useful for predicting the number of wins during the 1976 season.
 
 
 (e) **Report the value of the t statistic for the predictor x7. What is the relevant conclusion from this t statistic?**
@@ -288,7 +288,7 @@ Because this F-statistic is significantly large and the p-value of $3.273*10^{-8
 summary(nfl.1)$coefficients[3,3]
 ```
 
-The t-statistic for the percentage of rushing plays(x7) is 2.198362. Because it is relatively large and the p-value for the percentage of rushing plays(x7) is smaller than $alpha=0.05$, we have enough evidence to conclude that this variable is significant for predicting the number of games won in a 14-game season(y) when in the presence of the other predictor variables.
+The t-statistic for the percentage of rushing plays(x7) is 2.198362. Because it is relatively large and the p-value for the percentage of rushing plays(x7) is smaller than $\alpha=0.05$, we have enough evidence to conclude that this variable is significant for predicting the number of games won in a 14-game season(y) when in the presence of the other predictor variables.
 
 
 (f) **Check the regression assumptions by creating the diagnostic plots. Comment on these plots**
@@ -402,7 +402,7 @@ F-statistic = 0.5623
 Critical value = 2.545386  
 P-Value = 0.7279  
 
-Because the F-statistic is smaller than the critical value, and the p-value is greater than $alpha=0.05$, we fail to reject $H_0$. In other words we do not have enough evidence to conclude that `HtShoes`, `Seated`, `Arm`, `Thigh`, and `Leg` are necessary to keep in the model in the presence of the other variables. We can drop `HtShoes`, `Seated`, `Arm`, `Thigh`, and `Leg` as they not necessary in this model, so a reduced model (Model 2) is prefered. 
+Because the F-statistic is smaller than the critical value, and the p-value is greater than $\alpha=0.05$, we fail to reject $H_0$. In other words we do not have enough evidence to conclude that `HtShoes`, `Seated`, `Arm`, `Thigh`, and `Leg` are necessary to keep in the model in the presence of the other variables. We can drop `HtShoes`, `Seated`, `Arm`, `Thigh`, and `Leg` as they not necessary in this model, so a reduced model (Model 2) is prefered. 
 
 
 (i) **Produce a residual plot for your model from part 4g. Based on the residual plot, comment on the assumptions for the multiple regression model.**
@@ -470,18 +470,18 @@ seB_age = 0.0229966
 t = b_age/seB_age
 t
 
-critval= qt(1-0.05/2, 113-2)
+critval= qt(1-0.05/2, 113-6)
 critval
 
-pval= 2*pt(-t, 113-2)
+pval= 2*pt(-t, 113-6)
 pval
 ```
 
-T-statistic = 0.7550551  
-Critical value = 1.981567  
-P-Value = 0.451815  
+T-statistic = 0.7550551   
+Critical value = 1.982383   
+P-Value = 0.4518747   
 
-Because the t-statistic is smaller than the critical value, and the p-value is greater than $alpha=0.05$, we fail to reject $H_0$. In other words, we do not have enough evidence to conclude that Age is necessary to keep in the model in the presence of the other variables. We can drop `Age` as it is not necessary in this model.
+Because the t-statistic is smaller than the critical value, and the p-value is greater than $\alpha=0.05$, we fail to reject $H_0$. In other words, we do not have enough evidence to conclude that Age is necessary to keep in the model in the presence of the other variables. We can drop `Age` as it is not necessary in this model.
 
 
 (c) **What is the R2 for this model? Write a sentence that interprets this value in context.**
@@ -504,8 +504,8 @@ $R^2 = 0.4765468$. The coefficient of determination informs us that about 47.65%
 
 *Carry out the appropriate hypothesis test to decide which of models 1 or 2 should be used. Be sure to show all steps in your hypothesis test.*
 
-$H_0$ = $\beta_{x1} = \beta_{x2} = 0$ (The parameters in the variables we wish to drop are 0, so the reduced model (model 2) is supported.)  
-$H_0$ = At least one coefficient in $H_0$ is not 0  (The full model (model 1) is supported.)  
+$H_0$ = $\beta_{x3} = \beta_{x4} = \beta_{x5} = 0$ (The parameters in the variables we wish to drop are 0, so the reduced model (model 2) is supported.)  
+$H_A$ = At least one coefficient in $H_0$ is not 0  (The full model (model 1) is supported.)  
 
 ```{r}
 SSr1 = (57.305 + 33.397 + 0.136 + 5.101 + 0.028)
@@ -529,7 +529,7 @@ F-statistic = 1.781422
 Critical value = 2.68869  
 P-Value = 0.1550925  
 
-Because the F-statistic is smaller than the critical value, and the p-value is greater than $alpha=0.05$, we fail to reject $H_0$. In other words, we do not have enough evidence to conclude that `Stay` (x1) and `Culture` (x2) are necessary to keep in the model in the presence of the other variables. We can drop `Stay` (x1) and `Culture` (x2) as they not necessary in this model, so a reduced model (Model 2) is better.
+Because the F-statistic is smaller than the critical value, and the p-value is greater than $\alpha=0.05$, we fail to reject $H_0$. In other words, we do not have enough evidence to conclude that `Age` (x3), `Census` (x4) and `Beds` (x5) are necessary to keep in the model in the presence of the other variables. We can drop `Age` (x3), `Census` (x4) and `Beds` (x5) as they not necessary in this model, so a reduced model (Model 2) is better.
 
 
 (e) **Suppose we want to decide between two potential models:**
@@ -539,8 +539,8 @@ Because the F-statistic is smaller than the critical value, and the p-value is g
 
 *Carry out the appropriate hypothesis test to decide which of models 2 or 3 should be used. Be sure to show all steps in your hypothesis test.*
 
-$H_0$ = $\beta_{x3} = \beta_{x3} = 0$ (The parameters in the variables we wish to drop are 0, so the reduced model (model 2) is supported.)  
-$H_0$ = At least one coefficient in $H_0$ is not 0  (The full model (model 3) is supported.)  
+$H_0$ = $\beta_{x3} = \beta_{x4} = 0$ (The parameters in the variables we wish to drop are 0, so the reduced model (model 2) is supported.)  
+$H_A$ = At least one coefficient in $H_0$ is not 0  (The full model (model 3) is supported.)  
 
 ```{r}
 SSr3 = (57.305 + 33.397 + 0.136 + 5.101)
@@ -564,7 +564,7 @@ F-statistic = 2.68205
 Critical value = 3.080387  
 P-Value = 0.07297994  
 
-Because the F-statistic is larger than the critical value, and the p-value is smaller than $alpha=0.05$, we reject $H_0$ in favor of $H_A$. In other words, we have enough evidence to conclude that `Age` (x3) and `Census` (x4) are necessary to keep in the model in the presence of the other variables. We cannot drop `Age` (x3) and `Census` (x4) as they necessary in this model, so a fuller model (Model 3) is better.
+Because the F-statistic is smaller than the critical value, and the p-value is larger than $\alpha=0.05$, we fail to reject $H_0$ in favor of $H_A$. In other words, we do not have enough evidence to conclude that `Age` (x3) and `Census` (x4) are necessary to keep in the model in the presence of the other variables. We can drop `Age` (x3) and `Census` (x4) as they necessary in this model, so a reduced model (Model 2) is better.
 
 
 ----
@@ -624,7 +624,7 @@ penguins.noint <- lm(body_mass_g~bill_depth_mm + species, data=penguins)
 anova(penguins.noint, penguins.int)
 ```
 
-Because the F-statistic is significant, and the p-value is smaller than $alpha=0.05$, we reject $H_0$ in favor of $H_A$. In other words, we have enough evidence to conclude that the interaction terns between species and bill depth are necessary to keep in the model in the presence of the other variables.
+Because the F-statistic is significant, and the p-value is smaller than $\alpha=0.05$, we reject $H_0$ in favor of $H_A$. In other words, we have enough evidence to conclude that the interaction terns between species and bill depth are necessary to keep in the model in the presence of the other variables.
 
 
 (e) **Based on your answer in part 6d, write out the estimated regression equations relating body mass and bill depth, for each species of the penguins.**
@@ -634,12 +634,12 @@ $I_1$= 1 if species is Chinstrap penguins and 0 otherwise, and $I_2$= 1 if speci
 *Chinstrap penguins:*   
 $\hat y = -283.28 + 217.15(x) + 247.06(1) + -175.71(0) + -12.53(x*1) + 152.29(x*0)$  
 = $(-283.28 + 247.06) + (217.15 + -12.53)(x)$  
-= $-36.22 + 204.62x$  
+= $-36.22 + 204.62(x)$  
 
 *Gentoo penguins:*   
 $\hat y = -283.28 + 217.15(x) + 247.06(0) + -175.71(1) + -12.53(x*0) + 152.29(x*1)$  
 = $(-283.28 + -175.71) + (217.15 + 152.29)(x)$   
-= $-458.99 + 369.44x$  
+= $-458.99 + 369.44(x)$  
 
 *Adelie penguins:*   
 $\hat y = -283.28 + 217.15(x) + 247.06(0) + -175.71(0) + -12.53(x*0) + 152.29(x*0)$  
@@ -667,17 +667,7 @@ iii. Chinstrap and Gentoo.
 
 *If we are able to, conduct Tukey’s multiple comparisons and contextually interpret the results of these hypothesis tests.*
 
-
-We can conduct pairwise comparisons for the difference in mean body mass among all pairs of species for given values bill depth by conducting three separate hypotheses tests. However, we need to be careful when conducting these tests to avoid making type 1 errors. To ensure the chance of making any Type I error is not more than $\alpha$, we can use to Tukey procedure.
-
-```{r}
-pairwise<-multcomp::glht(penguins.noint, linfct = mcp(species= "Tukey"))
-summary(pairwise)
-```
-
-We can see that there is a significant difference in the mean body mass for all pairs of species apart from Chinstrap - Adelie, for given bill depth, since both the Gentoo tests are significant. We note that the data supports the claim that there is significant difference in mean body mass of penguins of the Gentoo and Chinstrap species as well as the Gentoo and Adelie species when controlling for bill depth. However, there is not a significant difference in mean body mass for penguins in the Chinstrap and Adelie species when controlling for bill depth which is consistent with what we saw in the scatterplot from part 6b.
-
-Given the positive values for the difference in the estimated coefficients, penguins in the Gentoo species have the highest body mass, followed by penguins in the Chinstrap species, and then penguins in the Adelie species, when bill depth is controlled.
+We cannot conduct pairwise comparisons for the difference in mean body mass among all pairs of species for given values bill depth because there is a significant interaction between penguin species and bill depth. This is clear when looking at the slopes of the regression equations for each species (6e). For this reason we cannot conduct Tukey's  multiple comparisons as it will produce an error due to interaction. 
 
 ----
 
@@ -719,7 +709,7 @@ A multiple linear regression model with teacher pay as the response variable wit
 *Use the following info to answer the rest of question 7.*
 
 **We want to see if geographic region and spending on public schools affect the average public teacher pay. A regression with no interactions was fitted, i.e.,**
-$$E(y)=β0 +β_1x_1 +β_2I_2 +β_3I_3,$$
+$$E(y)=β_0 +β_1x_1 +β_2I_2 +β_3I_3,$$
 **where I2 and I3 are the dummy codes for AREA. I2 = 1 if AREA = South, 0 otherwise, and I3 = 1 if AREA = West, 0 otherwise. The following output from R is shown below**
 
     Coefficients:  
@@ -751,14 +741,15 @@ iii. South region and the West region,
 **while controlling for expenditure.**
 
 ```{r}
-# beta_j +- t_(1-alpha)(2*g),(n-p) * se(beta_j)
+# beta_j +- t_(1-alpha/(2*g)),(n-p) * se(beta_j)
+g= 3
 p= 4
 n= 51
-t= qt(1-0.05/6, n-p)
+t= qt(1-0.05/(2*g), n-p)
 
 b_2 = 529.4
 se_b2 = 7.669e+02
-cat("South - North: [", b_2 - (t*se_b2), ",", b_2 + (t*se_b2),"] \n")
+cat("North - South: [", b_2 - (t*se_b2), ",", b_2 + (t*se_b2),"] \n")
 
 b_3 = 1674
 se_b3 = 8.012e+02 
@@ -771,7 +762,9 @@ cat("South - West: [", b2b3 - (t*se_b2b3), ",", b2b3 + (t*se_b2b3),"] ")
 
 ```
 
+The difference in mean pay for teachers in the North region and the South region is between -\$1374.578 and \$2433.378. The difference in mean pay for teachers in the North region and the West region is between -\$315.1348 and \$3663.135. The difference in mean pay for teachers in the South region and the West region is between -\$3282.493 and \$993.2934
+
 
 (f) **What do your intervals from part 7e indicate about the effect of geographic region on mean annual salary for teachers (while controlling for expenditure)?**
 
-All three CIs include 0, so there is NOT a significant difference in mean annual public school teacher salary of schools between all pairs of regions, when controlling for public school expenditure per student.
+All three CIs include 0, so there is NOT a significant difference in mean annual public school teacher salary of schools between any pairs of regions, when controlling for public school expenditure per student.
