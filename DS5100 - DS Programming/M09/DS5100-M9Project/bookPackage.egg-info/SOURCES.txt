@@ -1,0 +1,10 @@
+README.md
+setup.py
+bookPackage/__init__.py
+bookPackage/booklover.py
+bookPackage/booklover_test.py
+bookPackage.egg-info/PKG-INFO
+bookPackage.egg-info/SOURCES.txt
+bookPackage.egg-info/dependency_links.txt
+bookPackage.egg-info/requires.txt
+bookPackage.egg-info/top_level.txt
