@@ -1,0 +1,206 @@
+---
+title: "M11 Participation"
+author: "Rachel Holman"
+date: "2023-08-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exercise 11.1
+
+```{r}
+library(tidyverse)
+```
+
+
+## Exercise 11.2
+
+```{r}
+scores <- 
+  tibble(
+    name = c("mike", "carol", "greg", "marcia", "peter", 
+             "jan", "bobby", "cindy", "alice"),
+    school = c("south", "south", "south", "south", "north", 
+               "north", "north", "south", "south"),
+    teacher = c("johnson", "johnson", "johnson", "johnson",  
+                "smith", "smith", "smith", "perry", "perry"),
+    sex = c("male", "female", "male", "female", "male", 
+            "female", "male", "female", "female"),
+    math_score = c(4, 3, 2, 4, 3, 4, 5, 4, 5),
+    reading_score = c(1, 5, 2, 4, 5, 4, 1, 5, 4)
+)
+```
+
+
+## Exercise 11.3
+
+```{r}
+scores
+```
+
+
+## Exercise 11.4
+
+```{r}
+first3 <- scores %>%
+  head(3) #could also use slice(1:3)
+first3
+```
+
+
+## Exercise 11.5
+
+```{r}
+scores %>%
+  arrange(desc(math_score))
+```
+
+
+## Exercise 11.6
+
+```{r}
+scores %>%
+  arrange(name)
+```
+
+
+## Exercise 11.7
+
+```{r}
+scores %>%
+  arrange(sex)
+```
+```{r}
+scores %>%
+  arrange(sex) %>%
+  summarize(mean(math_score),
+            mean(reading_score))
+```
+
+
+## Exercise 11.8
+
+```{r}
+scores %>%
+  arrange(school, teacher, sex, math_score, reading_score)
+```
+
+
+## Exercise 11.9
+
+```{r}
+scores %>%
+  select(name, math_score, reading_score)
+```
+
+
+## Exercise 11.10
+
+```{r}
+scores %>%
+  select(-c(sex))
+```
+
+
+## Exercise 11.11
+
+```{r}
+scores %>%
+  select(-c(math_score, reading_score))
+```
+
+
+## Exercise 11.12
+
+```{r}
+scores %>%
+  select(sex, everything())
+```
+
+
+## Exercise 11.13
+
+```{r}
+scores %>%
+  filter(sex == "male" & school == "south")
+```
+
+
+## Exercise 11.14
+
+```{r}
+scores %>%
+  filter(math_score > mean(math_score))
+```
+
+
+## Exercise 11.15
+
+```{r}
+scores %>%
+  filter(math_score >= 4 & reading_score >= 3)
+```
+
+
+## Exercise 11.16
+
+```{r}
+scores %>%
+  filter(math_score <= 3 | reading_score <= 3)
+```
+
+
+## Exercise 11.17
+
+```{r}
+#skipped in class
+```
+
+
+## Exercise 11.18
+
+```{r}
+scores %>%
+  filter(substr(name,1,1)=="m")
+```
+
+
+## Exercise 11.19
+
+```{r}
+scores %>%
+  group_by(teacher) %>%
+  filter(math_score == 5 | reading_score == 5) %>%
+  select(teacher) %>%
+  distinct()
+```
+
+
+## Exercise 11.20
+
+```{r}
+scores %>%
+  group_by(sex)%>%
+  summarize(mean_math = mean(math_score)) %>%
+  filter(mean_math == 4) 
+```
+
+
+## Exercise 11.21
+
+```{r}
+scores %>%
+  mutate(math_score = 10*math_score,
+         reading_score = 10*reading_score)
+```
+
+
+## Exercise 11.22
+
+```{r}
+scores %>%
+  mutate(math_reading_avg = (math_score+reading_score)/2)
+```

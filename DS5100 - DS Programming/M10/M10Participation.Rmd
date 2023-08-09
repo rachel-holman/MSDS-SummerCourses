@@ -1,0 +1,96 @@
+---
+title: "M10 Participation"
+author: "Rachel Holman"
+date: "2023-08-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exercise 10.1
+
+```{r}
+#make list of size 10 
+Fibonacci <- numeric(10)
+Fibonacci[1] <- Fibonacci[2] <- 1
+for (i in 3:10) {
+  Fibonacci[i] <- Fibonacci[i - 2] + Fibonacci[i - 1]
+}
+
+print("First 10 Fibonacci numbers:")
+print(Fibonacci)
+```
+
+
+## Exercise 10.2
+
+```{r}
+# Fibonacci function using a for loop
+fibonacci = function(n=10) {
+  
+  Fibonacci <- numeric(n)
+  Fibonacci[1] <- Fibonacci[2] <- 1
+
+  for (i in 3:n) {
+    Fibonacci[i] = Fibonacci[i - 1] + Fibonacci[i - 2]
+  }
+
+  return(Fibonacci)
+}
+
+print("First 10 Fibonacci numbers:")
+fibonacci()
+```
+
+
+## Exercise 10.3
+
+```{r}
+test = function(x){
+  return(ifelse((0<=x & x<=1), 1, 0))
+}
+```
+
+
+## Exercise 10.4
+
+```{r}
+test(-2)
+test(0)
+test(0.2)
+test(0.999)
+test(1.0001)
+```
+
+
+## Exercise 10.5
+
+```{r}
+print("first 10 letters of alphabet in lower case:")
+head(letters, 10)
+print("last 10 letters of alphabet in upper case:")
+tail(LETTERS, 10)
+print("22nd-24th letters of alphabet in upper case:")
+LETTERS[22:24]
+
+```
+
+
+## Exercise 10.6
+
+```{r}
+for(i in 1:100){
+  if (i %% 3 == 0 && i %% 5 == 0) {
+    print(paste(i, "FizzBuzz"))
+  } else if (i %% 3 == 0) {
+    print(paste(i, "Fizz"))
+  } else if (i %% 5 == 0) {
+    print(paste(i, "Buzz"))
+  } else {
+    print(i)
+  }
+}
+```
+

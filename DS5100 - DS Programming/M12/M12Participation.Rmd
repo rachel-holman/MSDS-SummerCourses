@@ -1,0 +1,117 @@
+---
+title: "M12Participation"
+author: "Rachel Holman"
+date: "2023-08-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(gridExtra)
+```
+
+```{r}
+library(vctrs)
+head(mpg)
+```
+
+## Exercise 12.1
+
+```{r}
+mpg %>% ggplot()
+```
+
+
+## Exercise 12.2
+
+```{r}
+mpg %>% 
+  ggplot(aes(x = cyl, y = hwy)) +
+  geom_point()
+```
+
+
+## Exercise 12.3
+
+```{r}
+mpg %>% 
+  ggplot(aes(x = class, y = drv)) +
+  geom_point()
+```
+
+
+## Exercise 12.4
+
+```{r}
+x <- seq(-6*pi, 6*pi, length.out = 100)
+dat <- data.frame(x=x, y=sin(x)/x)
+
+ggplot(aes(x=x, y=y), data=dat) +
+  geom_line()
+```
+
+
+## Exercise 12.5
+
+```{r}
+ggplot(cars, aes(x=speed, y=dist)) +
+  geom_point()
+```
+
+
+## Exercise 12.6
+
+```{r}
+ggplot(cars, aes(x=speed, y=dist, color=(dist>80))) +
+  geom_point()
+```
+
+
+## Exercise 12.7
+
+```{r}
+ggplot(cars, aes(x=speed, y=dist, color=(dist>80))) +
+  geom_point() +
+  scale_color_manual(values= c('blue','red'))
+```
+
+
+## Exercise 12.8
+
+```{r}
+ggplot(cars, aes(x=speed, y=dist)) +
+  geom_point(aes(color=(dist>80))) + 
+  scale_color_manual(values= c('blue','red')) +
+  geom_smooth(method='lm')
+```
+
+```{r}
+ggplot(cars, aes(x=speed, y=dist)) +
+  geom_point(aes(color=(dist>80))) + 
+  scale_color_manual(values= c('blue','red')) +
+  geom_smooth(method='loess')
+```
+
+
+## Exercise 12.9
+
+```{r}
+ggplot(cars, aes(x=speed)) +
+  geom_histogram(bins=10) 
+
+ggplot(cars, aes(x=dist)) +
+  geom_histogram(bins=10) 
+```
+
+
+## Exercise 12.10
+
+```{r}
+ggplot(mpg) +
+  geom_point(aes(x=hwy, y=cty))+
+  facet_grid(drv~cyl)
+
+```
+
+
