@@ -1,0 +1,787 @@
+---
+title: "Project2"
+author: "Rachel Holman, Serene Lu, Taryn Trimble"
+date: "2023-07-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(GGally)
+library(multcomp)
+library(leaps)
+library(car)
+library(ROCR)
+```
+
+
+#### loading and cleaning data + creating variables
+
+```{r}
+housing <- read.csv("kc_house_data.csv", header=TRUE)
+head(housing)
+
+housing <- housing %>%
+  mutate(highGrade = ifelse(grade>7, 1, 0),
+         highGradeFtr = ifelse(grade>7, "above avg", "below avg"),
+         renovated = ifelse(yr_renovated > 0, 1, 0),
+         waterfront = as.factor(waterfront),
+         houseAge = 2023-yr_built)
+
+#housing <- subset(housing, select = -c(id, date, lat, long, sqft_living15, sqft_lot15, yr_renovated, sqft_above, yr_built))
+  
+head(housing)
+
+#sqft_living = sqft_basement+sqft_above
+```
+
+#### making testing vs training split
+
+```{r}
+set.seed(7103) ##for reproducibility to get the same split
+sample<-sample.int(nrow(housing), floor(.70*nrow(housing)), replace = F) #70/30 split 
+train<-housing[sample, ] ##training data frame
+test<-housing[-sample, ] ##test data frame
+```
+
+
+
+# Visualizations for Linear Regression
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(GGally)
+library(multcomp)
+library(leaps)
+library(car)
+library(ROCR)
+library(ggcorrplot)
+library(patchwork)
+library(ggridges)
+library(viridis)
+library(hrbrthemes)
+library(cowplot)
+library(ggpol)
+library(mapview)
+library(sf)
+library(readr)
+```
+
+
+### formatting the date column
+```{r}
+date_split <- read_fwf(paste(housing$date, collapse = "\n"),
+                  col_positions = fwf_widths(c(4, 2, 2, 7), col_names = c("Year", "Month", "Day", "Misc")))
+housing<-cbind(housing, date_split)
+housing$final_date<-as.Date(with(housing,paste(Year,Month,Day,sep="-")),"%Y-%m-%d")
+```
+
+
+### Correlation Plot
+```{r}
+train2 <- subset(train, select = -c(highGradeFtr, date, waterfront))
+
+corr <- round(cor(train2), 1)
+ggcorrplot(corr, hc.order = TRUE, 
+           type = "lower", 
+           lab = TRUE, 
+           lab_size = 3, 
+           method="circle", 
+           colors = c("tomato2", "white", "springgreen3"), 
+           title="Correlogram of housing", 
+           ggtheme=theme_bw)
+```
+
+### Scatterplots with numeric variables
+```{r}
+b <- ggplot(train, aes(sqft_living, price, color = grade)) + 
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm", se=FALSE) +
+  labs(subtitle="By grade",
+       title="Living Space (Square Foot) by Price")
+b1 <- ggplot(train, aes(sqft_above, price, color = grade)) + 
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm", se=FALSE) +
+  labs(subtitle="By grade",
+       title="Space Above(Square Foot) by Price")
+b2 <- ggplot(train, aes(bathrooms, price, color = grade)) + 
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm", se=FALSE) +
+  labs(subtitle="By grade",
+       title="Number of Bathrooms by Price")
+b3 <- ggplot(train, aes(sqft_basement, price, color = grade)) + 
+  geom_point(alpha = 0.2) +
+  geom_smooth(method="lm", se=FALSE) +
+  labs(subtitle="By grade",
+       title="Basement Space (Square Foot) by Price")
+(b + b1)/(b2 + b3)
+```
+
+### Boxplots for categorical variables
+```{r}
+d1<-ggplot(train, aes(x=grade, y=price, fill=factor(view))) + 
+    geom_boxplot()
+d2<-ggplot(train, aes(x=grade, y=price, fill=factor(waterfront))) + 
+    geom_boxplot()
+d3<-ggplot(train, aes(x=grade, y=price, fill=factor(condition))) + 
+    geom_boxplot()
+(d1 + d3) / d2
+```
+
+#### Facet wrapped box plots by Grade
+```{r}
+e <- ggplot(housing, aes(x=grade, y=price, fill=factor(waterfront))) + 
+    geom_boxplot() +
+    facet_wrap(~grade, scale = "free")
+e
+```
+
+### Ridgeline plots by Grade and Number 
+```{r}
+f1<-ggplot(train, aes(x = price, y = factor(grade), fill = ..x..)) +
+  geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
+  scale_fill_viridis(name = "Temp. [F]", option = "C") +
+  labs(title = 'Price by Grades') +
+  theme_ipsum() +
+    theme(
+      legend.position="none",
+      panel.spacing = unit(0.1, "lines"),
+      strip.text.x = element_text(size = 8)
+    )
+f2<-ggplot(train, aes(x = price, y = factor(bathrooms), fill = ..x..)) +
+  geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01) +
+  scale_fill_viridis(name = "Temp. [F]", option = "C") +
+  labs(title = 'Price by Number of Bathrooms') +
+  theme_ipsum() +
+    theme(
+      legend.position="none",
+      panel.spacing = unit(0.1, "lines"),
+      strip.text.x = element_text(size = 8)
+    )
+
+f1+f2
+```
+
+
+# Visualizations for Logistic Regression
+
+
+### Bar graphs for Price, Grade, Condition
+```{r}
+ggplot(train, aes(fill=factor(highGrade), y=price, x=factor(highGrade))) + 
+    geom_bar(position="dodge", stat="identity") +
+    scale_fill_viridis(discrete = T, option = "E") +
+    labs(title = "Effect of Condition on Price and Grade", subtitle = "Condition Index from 1-5") +
+    facet_wrap(~factor(condition)) +
+    theme_ipsum() +
+    guides(fill=guide_legend(title="Grade")) +
+    scale_fill_discrete(labels=c('Low Grade', 'High Grade')) +
+    xlab("")
+```
+
+### Boxplots for categorical variables
+```{r}
+q1<-ggplot(train, aes(x=factor(highGrade), y=bedrooms, fill=factor(highGrade))) +
+  geom_boxplot() +
+  ggtitle('Bedrooms by Grade')
+q2<-ggplot(train, aes(x=factor(highGrade), y=price, fill=factor(highGrade))) +
+  geom_boxplot() +
+  ggtitle('Price by Grade')
+q3<-ggplot(train, aes(x=factor(highGrade), y=houseAge, fill=factor(highGrade))) +
+  geom_boxplot() +
+  ggtitle('Age of House by Grade')
+q4<-ggplot(train, aes(x=factor(highGrade), y=condition, fill=factor(highGrade))) +
+  geom_boxplot() +
+  ggtitle('Condition by Grade')
+q5<-ggplot(train, aes(x=factor(highGrade), y=sqft_above, fill=factor(highGrade))) +
+  geom_boxplot() +
+  ggtitle('Space Above (Square Feet) by Grade')
+q6<-ggplot(train, aes(x=factor(highGrade),fill = factor(waterfront) )) + geom_bar(position = "dodge")+
+  ggtitle('Waterfront View by Grade')
+
+(q1 + q2)/(q3 + q4) / (q5 + q6)
+```
+
+```{r}
+# Boxplot with jitter for latitude
+ggplot(train, aes(x=factor(highGrade), y=lat, fill=factor(highGrade))) +
+  geom_boxplot(outlier.color = NA) +
+  geom_point(position = position_jitter(), alpha = 0.2, size = 2, colour = 'brown') +
+  ggtitle('Latitude by Grade')
+# Boxplot with jitter for longitude
+ggplot(train, aes(x=factor(highGrade), y=long, fill=factor(highGrade))) +
+  geom_boxplot(outlier.color = NA) +
+  geom_point(position = position_jitter(), alpha = 0.2, size = 2, colour = 'brown') +
+  ggtitle('Longitude by Grade')
+```
+
+### density plot longitude latitude
+```{r}
+# density plot longitude
+r1<-ggplot(train, aes(x=long, y=factor(highGrade), fill=..x..)) +
+  geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01, 
+      alpha = 0.5) +
+  scale_fill_viridis(name = "Temp. [F]", option = "C") +
+  labs(title = 'Longitude by Grade') +
+  theme_ipsum() +
+    theme(
+      legend.position="none",
+      panel.spacing = unit(0.1, "lines"),
+      strip.text.x = element_text(size = 8)
+    )
+
+# density plot latitude
+r2<-ggplot(train, aes(x=lat, y=factor(highGrade), fill=..x..)) +
+  geom_density_ridges_gradient(scale = 3, rel_min_height = 0.01, 
+      alpha = 0.5) +
+  scale_fill_viridis(name = "Temp. [F]", option = "C") +
+  labs(title = 'Latitude by Grade') +
+  theme_ipsum() +
+    theme(
+      legend.position="none",
+      panel.spacing = unit(0.1, "lines"),
+      strip.text.x = element_text(size = 8)
+    )
+
+r1 / r2
+```
+
+### Map with latitude and longitude
+```{r}
+mapview(housing, xcol = 'long', ycol = 'lat', zcol = 'grade', crs = 4269)
+```
+
+
+---- 
+
+# Logistic Regression: Can we predict with relatively high accuracy the odds of a house being rated as having above average construction and design (grade)?
+
+```{r}
+housing <- subset(housing, select = -c(id, date, lat, long, sqft_living15, sqft_lot15, yr_renovated, sqft_above, yr_built))
+
+set.seed(7103) ##for reproducibility to get the same split
+sample<-sample.int(nrow(housing), floor(.70*nrow(housing)), replace = F) #70/30 split 
+train<-housing[sample, ] ##training data frame
+test<-housing[-sample, ] ##test data frame
+```
+
+
+#### Before fitting a model, create some data visualizations to explore the relationship between these predictors and whether a house has above average grade
+
+```{r}
+chart1<-ggplot2::ggplot(train, aes(x=renovated, fill=highGradeFtr))+
+  geom_bar(position = "fill")+
+  labs(x="Renovated? 1=yes, 0=no", y="Grade",
+       title="Proportion of House Grades by Renovation Status")
+
+chart2<-ggplot2::ggplot(train, aes(x=waterfront, fill=highGradeFtr))+
+  geom_bar(position = "fill")+
+  labs(x="Waterfront? 1=yes, 0=no", y="Grade",
+       title="Proportion of House Grades by Waterfront")
+
+chart3<-ggplot2::ggplot(train, aes(x=view, fill=highGradeFtr))+
+  geom_bar(position = "fill")+
+  labs(x="View", y="Grade",
+       title="Proportion of House Grades by View")
+
+chart4<-ggplot2::ggplot(train, aes(x=floors, fill=highGradeFtr))+
+  geom_bar(position = "fill")+
+  labs(x="Foors", y="Grade",
+       title="Proportion of House Grades by # of Floors")
+
+chart5<-ggplot2::ggplot(train, aes(x=condition, fill=highGradeFtr))+
+  geom_bar(position = "fill")+
+  labs(x="Condition", y="Grade",
+       title="Proportion of House Grades by Condition")
+
+chart6<-ggplot2::ggplot(train, aes(x=bedrooms, fill=highGradeFtr))+
+  geom_bar(position = "fill")+
+  labs(x="Bedrooms", y="Grade",
+       title="Proportion of House Grades by # of Bedrooms")
+
+chart7<-ggplot2::ggplot(train, aes(x=bathrooms, fill=highGradeFtr))+
+  geom_bar(position = "fill")+
+  labs(x="Bathrooms", y="Grade",
+       title="Proportion of House Grades by # of Bathrooms")
+
+
+dp1<-ggplot2::ggplot(train,aes(x=price, color=highGradeFtr))+
+  geom_density()+
+  labs(title="Density Plot of Price",
+       subtitle= "by Grade")
+
+dp2<-ggplot2::ggplot(train,aes(x=zipcode, color=highGradeFtr))+
+  geom_density()+
+  labs(title="Density Plot of Zipcodes",
+       subtitle= "by Grade")
+
+dp3<-ggplot2::ggplot(train,aes(x=houseAge, color=highGradeFtr))+
+  geom_density()+
+  labs(title="Density Plot of House Age",
+       subtitle= "by Grade")
+
+dp4<-ggplot2::ggplot(train,aes(x=sqft_living, color=highGradeFtr))+
+  geom_density()+
+  labs(title="Density Plot of Living Space Sqft",
+       subtitle= "by Grade")
+
+dp5<-ggplot2::ggplot(train,aes(x=sqft_lot, color=highGradeFtr))+
+  geom_density()+
+  labs(title="Density Plot of Land Space Sqft",
+       subtitle= "by Grade")
+
+dp6<-ggplot2::ggplot(train,aes(x=sqft_basement, color=highGradeFtr))+
+  geom_density()+
+  labs(title="Density Plot of Basement Sqft",
+       subtitle= "by Grade")
+
+
+gridExtra::grid.arrange(chart1, chart2, chart3, chart4, chart5, chart6, chart7, ncol = 2, nrow = 4)
+gridExtra::grid.arrange(dp1, dp2, dp3, dp4, dp5, dp6, ncol = 2, nrow = 3)
+```
+
+### Use R to fit the logistic regression model using all the predictors shown above
+
+
+## Regsubsets Model Selection
+
+```{r}
+train<-train[!(train$bedrooms==33),]
+
+allreg <- leaps::regsubsets(highGrade~ price + bedrooms + bathrooms + sqft_living + 
+                sqft_lot + floors + waterfront + view + condition + 
+                sqft_basement + zipcode + renovated + houseAge, data=train, nbest=1)
+#summary(allreg)
+coef(allreg, which.max(summary(allreg)$adjr2))
+coef(allreg, which.min(summary(allreg)$cp))
+coef(allreg, which.min(summary(allreg)$bic))
+
+#all are the same
+```
+
+```{r}
+adj2_mod <- glm(highGrade~ price + bedrooms + bathrooms + sqft_living + 
+                floors + waterfront + view + houseAge, 
+              family="binomial", data=train)
+
+#par(mfrow = c(2, 2))
+#plot(adj2_mod)
+```
+
+## Stepwise Model Selection
+
+```{r, warning=FALSE, message=FALSE}
+fullmodel <- glm(highGrade~ price + bedrooms + bathrooms + sqft_living + 
+                sqft_lot + floors + waterfront + view + condition + 
+                sqft_basement + zipcode + renovated + houseAge, 
+              family="binomial", data=train)
+
+nullmodel <- glm(highGrade~ 1, 
+              family="binomial", data=train)
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+##forward selection, backward elimination, and stepwise regression
+forward <- step(nullmodel, scope=list(lower=nullmodel, upper=fullmodel), direction="forward", trace=FALSE)
+coef(forward)
+```
+
+```{r, warning=FALSE, message=FALSE}
+backward <- step(fullmodel, scope=list(lower=nullmodel, upper=fullmodel), direction="backward", trace=FALSE)
+coef(backward)
+```
+
+```{r, warning=FALSE, message=FALSE}
+both <- step(nullmodel, scope=list(lower=nullmodel, upper=fullmodel), direction="both", trace=FALSE)
+#coef(both)
+
+both1 <- lm(highGrade~ price + bedrooms + bathrooms + sqft_living + 
+                sqft_lot + floors + waterfront + view + condition + 
+                sqft_basement + houseAge, 
+                data=train)
+
+#check vif values
+faraway::vif(both1)
+```
+
+Forward backward and both all return the same model. The model chosen with best AIC, Marrrows cp and BIC are the same as the setwise but without condition, sqft_lot and sqft_basement.
+
+## Stepwise Model Evaluation
+
+```{r}
+summary(forward)
+vif(forward)
+```
+
+Estimated logistic regression equation:
+$$highGrade = -4.016 + 0.001750(sqft\_living) + 0.3619(floors) + 0.000006254(price) + \\ -0.03436(houseAge) + -0.4259(bedrooms) + -0.0006348(sqft\_basement) + \\ 0.2916(bathrooms) + 0.2871(view) + -2.262(waterfront) + -0.000002857(sqft\_lot) + -0.1041(condition) $$
+
+```{r}
+##predicted probs for test data
+preds<-predict(forward,newdata=test, type="response")
+
+##produce the numbers associated with classification table
+rates<-ROCR::prediction(preds, test$highGrade)
+
+##store the true positive and false positive rates
+roc_result<-ROCR::performance(rates,measure="tpr", x.measure="fpr")
+
+plot(roc_result, main="ROC Curve for Reduced Model")
+lines(x = c(0,1), y = c(0,1), col="red") 
+```
+
+```{r}
+##confusion matrix with threshold of 0.5
+table(test$highGrade, preds>0.5)
+
+#0.5
+fpr0.5=471/(2944+471)
+tpr0.5=2543/(2543+526)
+accuracy= (2944+2543)/(2944+471+2543+526)
+accuracy
+
+plot(roc_result, main="ROC Curve for Reduced Model")
+lines(x = c(0,1), y = c(0,1), col="red") 
+points(x=fpr0.5, y=tpr0.5, col="blue", pch=16)
+```
+
+```{r}
+auc<-performance(rates, measure = "auc")
+auc@y.values
+```
+
+```{r}
+table(test$highGrade, preds>0.5)
+```
+
+Error rate: $471+526 \over (2944+471+526+2543)$ =  $997 \over 6484$ = 0.1537631  
+False Positive Rate: $471 \over (2944+471)$ =  $471 \over 3415$ = 0.1379209    
+False Negative Rate: $526 \over (526+2543)$ =  $526 \over 3069$ = 0.1713913    
+True Positive Rate: $2944 \over (2944+471)$ =  $2944 \over 3415$ = 0.8620791    
+True Negative Rate: $2543 \over (526+2543)$ =  $2543 \over 3069$ = 0.8230694  
+Accuracy: $2944+2543 \over (2944+471+526+2543)$ =  $5487 \over 6484$ = 0.8462369  
+Precision: $2543 \over (471+2543)$ = $2543 \over 3014$ = 0.8437293
+
+
+## Regsubsets Model Evaluation
+
+```{r}
+#summary(adj2_mod)
+
+final <- adj2_mod
+summary(final)
+```
+
+Estimated logistic regression equation:
+$$highGrade = -4.313 + 0.000006173(price) + -0.4133(bedrooms) + 0.2292(bathrooms) + \\ 0.001526(sqft\_living) + 0.6036(floors) + -2.273(waterfront) + 0.2630(view) + -0.03619(houseAge)$$
+
+```{r}
+##predicted probs for test data
+preds<-predict(final,newdata=test, type="response")
+
+##produce the numbers associated with classification table
+rates<-ROCR::prediction(preds, test$highGrade)
+
+##store the true positive and false positive rates
+roc_result<-ROCR::performance(rates,measure="tpr", x.measure="fpr")
+
+plot(roc_result, main="ROC Curve for Reduced Model")
+lines(x = c(0,1), y = c(0,1), col="red") 
+```
+
+```{r}
+##confusion matrix with threshold of 0.5
+table(test$highGrade, preds>0.5)
+
+#0.5
+fpr0.5=501/(2914+501)
+tpr0.5=2552/(2552+517)
+accuracy= (2914+2552)/(2914+501+2552+517)
+#accuracy
+
+plot(roc_result, main="ROC Curve for Final Model")
+lines(x = c(0,1), y = c(0,1), col="red") 
+points(x=fpr0.5, y=tpr0.5, col="blue", pch=16)
+```
+
+```{r}
+auc<-performance(rates, measure = "auc")
+auc@y.values
+```
+
+```{r}
+table(test$highGrade, preds>0.5)
+```
+
+Error rate: $501+517 \over (2914+501+517+2552)$ =  $1018 \over 6484$ = 0.1570019  
+False Positive Rate: $501 \over (2914+501)$ =  $501 \over 3415$ = 0.1467057    
+False Negative Rate: $517 \over (517+2552)$ =  $517 \over 3069$ = 0.1684588    
+True Positive Rate: $2914 \over (2914+501)$ =  $2914 \over 3415$ = 0.8532943    
+True Negative Rate: $2552 \over (517+2552)$ =  $2552 \over 3069$ = 0.8315412  
+Accuracy: $2914+2552 \over (2914+501+517+2552)$ =  $5487 \over 6484$ = 0.8462369  
+Precision: $2552 \over (501+2552)$ = $2552 \over 3053$ = 0.8358991
+
+```{r}
+final2 <- lm(highGrade~ price + bedrooms + bathrooms + sqft_living + 
+                floors + waterfront + view + houseAge, 
+                data=train)
+
+faraway::vif(final2)
+ggpairs(final, columns = c(1:9), progress=F)
+```
+
+Vif values all very small. Slightly high corrolation between sqft_living and price, and sqft_living and bathrooms. Nothing too concerning.
+
+
+## Hypothesis test: is this final model useful?
+
+$H_0 : \beta_{price} = \beta_{bedrooms} = \beta_{bathrooms} = \beta_{sqft\_living} = \beta_{floors} = \beta_{waterfront} = \beta_{view} = \beta_{houseAge} = 0$ (The full model is not useful for estimating the grade status of a house)   
+$H_A :$ At least one coefficient in $H_0$ is nonzero (The full model is useful for estimating the grade status of a heouse)   
+
+```{r}
+#likelihood ratio test
+null <- glm(highGrade~1, family="binomial", data=train)
+
+##test statistic
+TS1<-null$deviance-final$deviance
+TS1
+
+##critical value
+qchisq(1-0.05,7)
+
+##pvalue
+1-pchisq(TS1,7)
+```
+
+Test Statistic, $\triangle G^2$, = 10494.06  
+Critical value = 14.06714  
+P-value = 0
+
+Because the test statistic is larger than the critical value, and the p-value is smaller than $\alpha=0.05$, we reject $H_0$ in favor of $H_A$. In other words, we have enough evidence to conclude that this logistic regression model with eight predictors is useful in estimating the grade status of a house compared to the intercept-only model.
+
+
+
+```{r}
+summary(final)
+```
+
+Estimated logistic regression equation:
+$$highGrade = -4.313 + 0.000006173(price) + -0.4133(bedrooms) + 0.2292(bathrooms) + \\ 0.001526(sqft\_living) + 0.6036(floors) + -2.273(waterfront1) + 0.2630(view) + -0.03619(houseAge)$$
+
+
+$\beta_{price} = 0.000006173$. The estimated log odds of a house being ranked with above average condition and design increases by 0.000006173 for each additional dollar of a house is sold for, when controlling for the other predictors. In other words, the estimated odds of a house being ranked with above average condition and design is multiplied by exp(0.000006173) = 1.000006 for each additional dollar of a house is sold for, when controlling for the other predictors.    
+
+$\beta_{bedrooms} = -0.4133$. The estimated log odds of a house being ranked with above average condition and design decreases by 0.4133 for each additional bedroom a house has, when controlling for the other predictors. In other words, the estimated odds of a house being ranked with above average condition and design is multiplied by exp(-0.4133) = 0.6614638 for each additional bedroom in a house, when controlling for the other predictors. 
+
+$\beta_{bathrooms} = 0.2292$. The estimated log odds of a house being ranked with above average condition and design increases by 0.2292 for each additional bathroom a house has, when controlling for the other predictors. In other words, the estimated odds of a house being ranked with above average condition and design is multiplied by exp(0.2292) = 1.257594 for each additional bathroom in a house, when controlling for the other predictors.    
+
+$\beta_{sqft\_living} = 0.001526$. The estimated log odds of a house being ranked with above average condition and design increases by 0.001526 for each additional square foot of interior living space a house has, when controlling for the other predictors. In other words, the estimated odds of a house being ranked with above average condition and design is multiplied by exp(0.001526) = 1.001527 for each additional squarefoot of interior living space, when controlling for the other predictors.   
+
+$\beta_{floors} = 0.6036$. The estimated log odds of a house being ranked with above average condition and design increases by 0.6036 for each additional floor or level a house has, when controlling for the other predictors. In other words, the estimated odds of a house being ranked with above average condition and design is multiplied by exp(0.6036) = 1.82869 for each additional floor in a house, when controlling for the other predictors.
+
+$\beta_{waterfront} = -2.273$. The estimated log odds of a house being ranked with above average condition and design is 2.273 lower for a house overlooking a waterfront than one that does not, when controlling for the other predictors. In other words, the estimated odds of a house being ranked with above average condition and design for a house overlooking a waterfront is exp(-2.273) = 0.1030027 times the odds for a house not overlooking a waterfront, when controlling for the other predictors.
+
+$\beta_{view} = 0.2630$. The estimated log odds of a house being ranked with above average condition and design increases by 0.2630 for each additional rating for a house's view, when controlling for the other predictors. In other words, the estimated odds of a house being ranked with above average condition and design is multiplied by exp(0.2630) = 1.300827 for each additional rating of a house's view, when controlling for the other predictors.
+
+$\beta_{houseAge} = -0.03619$. The estimated log odds of a house being ranked with above average condition and design decreases by 0.03619 for each additional year old a house is, when controlling for the other predictors. In other words, the estimated odds of a house being ranked with above average condition and design is multiplied by exp(-0.03619) = 0.964457 for each additional year since a house was built, when controlling for the other predictors.    
+
+
+----
+
+# Linear Regression: Which predictors make up the most accurate model to predict the housing price?
+
+
+```{r}
+housing <- read.csv("kc_house_data.csv", header=TRUE)
+
+housing <- housing %>%
+  mutate(highGrade = ifelse(grade>7, 1, 0),
+         renovated = ifelse(yr_renovated > 0, 1, 0),
+         houseAge = 2023-yr_built)
+
+# We star by removing variables we do not think are helpful:
+housing <- subset(housing, select = -c(id, date, lat, long, sqft_living15, sqft_lot15, yr_renovated, yr_built, sqft_living, waterfront, view, highGrade, zipcode))
+
+head(housing)
+```
+
+* We are left with one response variable and 10 predictors. 
+
+```{r}
+set.seed(7103) ##for reproducibility to get the same split
+sample<-sample.int(nrow(housing), floor(.70*nrow(housing)), replace = F) #70/30 split 
+train<-housing[sample, ] ##training data frame
+test<-housing[-sample, ] ##test data frame
+```
+
+
+```{r}
+#y_hat <- predict(object, mewdata=test)
+#MSE<- (sum(y-y_hat)**2)/n # Mean-squared error
+#RMSE<- sqrt(MSE) # Root mean-squared error
+```
+
+* MSE is motivated by prediction accuracy on test data
+* Module 9: Mode selection criteria such as AIC, Mellow's cp, adj R^2 are motivated by balancing model fit (training) and model complexity. 
+* With the right balance, MSE should perform better.
+
+### Starting the multiple linear regression model:
+```{r}
+result<- lm(price~., data=train)
+summary(result)
+```
+
+* sqft_lot and renovated have the largest p-values, so I plan to keep into consideration how significant the two are for our model. 
+
+```{r}
+par(mfrow=c(2,2))
+plot(result)
+```
+
+* It appears that neither of the assumptions are satisfied. The spread of data points from left to right is not consistent and the data points are not spread around the red line. 
+
+```{r}
+boxcox(result, lambda= seq(-0.5,0.5,1/100))
+```
+
+* Since the interval is so small and so close to 0, we will use the log transform. 
+
+```{r}
+y_star<-log(train$price)
+y_hat<-log(test$price)
+
+train<-data.frame(train,y_star)
+test<-data.frame(test,y_hat)
+result<-lm(y_star~., data=train)
+par(mfrow=c(2,2))
+plot(result)
+```
+
+* Assumption 1 is still not met, the data points do not show that the mean error is 0. This means that we now need to transform the x variable as well.
+
+
+### We need to use the partial regression plots:
+
+```{r}
+library(car)
+```
+
+```{r}
+#remove<-lm(y_star~sqft_lot+renovated, data=train)
+
+result1<-lm(y_star~bedrooms+bathrooms+sqft_above+houseAge+grade+sqft_basement,data= train)
+
+result2<-lm(y_star~sqft_lot+renovated+floors+condition, data=train)
+
+#result<-lm(y_star~bedrooms+bathrooms+floors+sqft_lot+condition+grade+sqft_above+sqft_basement+houseAge+renovated, data=train)
+
+avplot_result1<-avPlots(result1)
+avplot_result2<-avPlots(result2)
+
+#avplots<-avPlots(result)
+#par(mfrow=c(2,2))
+#plot(avplots)
+```
+
+* Looking at the avPlots of for sqft_lot and renovated indicates that these predictors are not as significant as the other predictors. Pairing with both predictors having larger p-values (compared to the others) we are choosing to remove those two to see if our model improves. 
+
+```{r}
+train <- subset(train, select = -c(sqft_lot, renovated))
+```
+
+### Now we are going to re-run the residual plots. 
+
+```{r}
+result<-lm(y_star~bedrooms+bathrooms+floors+condition+grade+sqft_above+sqft_basement+houseAge, data=train)
+#y_star<-log(train$price)
+#train<-data.frame(train,y_star)
+
+par(mfrow=c(2,2))
+plot(result)
+```
+
+* There is a data point (15871) that is skewing the data. This needs to be analyzed to see if there is an error in the data.
+
+```{r}
+summary(result)
+```
+
+* Looking at multicollinearity because the coeeficient for bedrooms is negative.
+
+```{r}
+vif(result)
+```
+
+#### removed the house with 33 observations
+
+```{r}
+train<-train[!(train$bedrooms==33),]
+```
+
+ This is after removing the 33 bedroom instance (which was an error)
+
+```{r}
+result<-lm(y_star~bedrooms+bathrooms+floors+condition+grade+sqft_above+sqft_basement+houseAge, data=train)
+
+par(mfrow=c(2,2))
+plot(result)
+```
+
+### Running Cook's distance for point 12778
+
+```{r}
+cooks.distance(result)[which.max(cooks.distance(result))]
+```
+
+* This Cook's value still shows that it isn't an influential point therefore does not necessarily need to be removed. 
+
+```{r}
+summary(result)
+```
+
+$ log(price) = 10.25 - 0.03041(bedrooms) + 0.08211(bathrooms) + 0.1059(floors) + 0.03898(condition) + 0.2341(grade) + 0.0001544(sqft_above) + 0.0002395(sqft_basement) + 0.005761(houseAge) $
+
+```{r}
+test <- subset(test, select = -c(renovated, sqft_lot))
+```
+
+```{r}
+y_train<- train$y_star
+y_hat<- predict(result,test)
+
+mse<- mean((y_train - y_hat)^2)
+mse
+```
+
+* MSE is 0.4500993
+This isn't too bad, the closer the MSE is to 0. 
+
+## Hypothesis Test:
+
+$ H_o: \beta_{bedrooms} = \beta_{bathrooms} = \beta_{floors} = \beta_{condition} = \beta_{grade} = \beta_{sqft_above} = \beta_{sqft_basement} = \beta_{houseAge} = 0 $  
+$ H_a: $ At lease one coefficient in is nonzero, meaning the full model is useful for estimating the $log(price)$ of a house.
+  
+
+```{r}
+n = 15128
+p = 9
+
+p_val<- 2.2e-16
+fstat <- 3326
+crit_val<- qf(1-0.05, 15119, n-p)
+crit_val
+
+```
+
+* Since p-value is less than 0.05 we reject the null. Our data supports the claim that there is a linear relationship between price and the chosen predictors. 
+* Also since our F-stat is much larger than our critical value (3326>1.027) we reject the null hypothesis.
+
+
+----
+
+
+

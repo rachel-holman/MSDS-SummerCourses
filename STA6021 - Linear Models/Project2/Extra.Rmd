@@ -1,0 +1,143 @@
+---
+title: "extra"
+author: "Rachel Holman"
+date: "2023-07-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(GGally)
+library(multcomp)
+library(leaps)
+library(car)
+library(ROCR)
+```
+
+
+
+## extra model
+
+```{r}
+## Final model to really address question: do these variables impact odds of above average level of construction and design
+
+final <- glm(highGrade~ price + bedrooms + bathrooms + sqft_living + 
+                sqft_lot + floors + houseAge, 
+              family="binomial", data=train)
+
+summary(final)
+```
+
+Estimated logistic regression equation:
+$$highGrade = -4.305 + 0.000006244(price) + -0.4280(bedrooms) + 0.2250(bathrooms) + \\ 0.001572(sqft\_living) + -0.000001888(sqft\_lot) + 0.5828(floors) + -0.03588(houseAge)$$
+
+
+```{r}
+##predicted probs for test data
+preds<-predict(final,newdata=test, type="response")
+
+##produce the numbers associated with classification table
+rates<-ROCR::prediction(preds, test$highGrade)
+
+##store the true positive and false positive rates
+roc_result<-ROCR::performance(rates,measure="tpr", x.measure="fpr")
+
+plot(roc_result, main="ROC Curve for Reduced Model")
+lines(x = c(0,1), y = c(0,1), col="red") 
+```
+
+```{r}
+##confusion matrix with threshold of 0.5
+table(test$highGrade, preds>0.5)
+
+#0.5
+fpr0.5=502/(2913+502)
+tpr0.5=2545/(2545+524)
+accuracy= (2913+2545)/(2913+502+2545+524)
+accuracy
+
+plot(roc_result, main="ROC Curve for Reduced Model")
+lines(x = c(0,1), y = c(0,1), col="red") 
+points(x=fpr0.5, y=tpr0.5, col="blue", pch=16)
+```
+
+```{r}
+auc<-performance(rates, measure = "auc")
+auc@y.values
+```
+
+An AUC closer to 1 indicates the model does better than random guessing in classifying observations. Since it is almost equal to 1, it is classifying almost all observations correctly.
+
+
+```{r}
+table(test$highGrade, preds>0.5)
+```
+
+Error rate: $502+524 \over (2913+502+524+2545)$ =  $1026 \over 6484$ = 0.1582357  
+False Positive Rate: $502 \over (2913+502)$ =  $502 \over 3415$ = 0.1469985    
+False Negative Rate: $524 \over (524+2545)$ =  $524 \over 3069$ = 0.1707397    
+True Positive Rate: $2913 \over (2913+502)$ =  $2913 \over 3415$ = 0.8530015    
+True Negative Rate: $2545 \over (524+2545)$ =  $2545 \over 3069$ = 0.8292603  
+Accuracy: $2913+2545 \over (2913+502+524+2545)$ =  $5458 \over 6484$ = 0.8417643  
+Precision: $2545 \over (502+2545)$ = $2545 \over 3047$ = 0.8352478
+
+
+```{r}
+vif(final)
+ggpairs(final, columns = c(1:8), progress=F)
+```
+Vif values all very small. Slightly high corrolation between sqft_living and price, and sqft_living and bathrooms. Nothing too concerning. 
+
+## Hypothesis test: is this model useful?
+
+$H_0 : \beta_{price} = \beta_{bedrooms} = \beta_{bathrooms} = \beta_{sqft\_living} = \beta_{sqft\_lot} = \beta_{floors} = \beta_{houseAge} = 0$ (The full model is not useful for estimating the grade status of a house)   
+$H_A :$ At least one coefficient in $H_0$ is nonzero (The full model is useful for estimating the grade status of a heouse)   
+
+```{r}
+#likelihood ratio test
+null <- glm(highGrade~1, family="binomial", data=train)
+
+##test statistic
+TS1<-null$deviance-final$deviance
+TS1
+
+##critical value
+qchisq(1-0.05,7)
+
+##pvalue
+1-pchisq(TS1,7)
+```
+
+Test Statistic, $\triangle G^2$, = 10459.22  
+Critical value = 14.06714  
+P-value = 0
+
+Because the test statistic is larger than the critical value, and the p-value is smaller than $\alpha=0.05$, we reject $H_0$ in favor of $H_A$. In other words, we have enough evidence to conclude that this logistic regression model with seven predictors is useful in estimating the grade status of a house compared to the intercept-only model.
+
+
+
+```{r}
+summary(final)
+```
+
+Estimated logistic regression equation:
+$$highGrade = -4.305 + 0.000006244(price) + -0.4280(bedrooms) + 0.2250(bathrooms) + \\ 0.001572(sqft\_living) + -0.000001888(sqft\_lot) + 0.5828(floors) + -0.03588(houseAge)$$
+
+
+$\beta_{price} = 0.000006244$. The estimated log odds of a house being ranked with above average condition and design increases by 0.000006244 for each additional dollar of a house is sold for, when controlling for the other predictors. In other words, the estimated odds of a house being ranked with above average condition and design is multiplied by exp(0.000006244) = 1.000006 for each additional dollar of a house is sold for, when controlling for the other predictors.    
+
+$\beta_{bedrooms} = -0.4280$. The estimated log odds of a house being ranked with above average condition and design decreases by 0.4280 for each additional bedroom a house has, when controlling for the other predictors. In other words, the estimated odds of a house being ranked with above average condition and design is multiplied by exp(-0.4280) = 0.6518114 for each additional dollar of a house is sold for, when controlling for the other predictors. 
+
+$\beta_{bathrooms} = 0.2250$. The estimated log odds of a house being ranked with above average condition and design increases by 0.2250 for each additional bathroom a house has, when controlling for the other predictors. In other words, the estimated odds of a house being ranked with above average condition and design is multiplied by exp(0.2250) = 1.252323 for each additional dollar of a house is sold for, when controlling for the other predictors.    
+
+$\beta_{sqft\_living} = 0.001572$. The estimated log odds of a house being ranked with above average condition and design increases by 0.001572 for each additional square foot of interior living space a house has, when controlling for the other predictors. In other words, the estimated odds of a house being ranked with above average condition and design is multiplied by exp(0.001572) = 1.001573 for each additional dollar of a house is sold for, when controlling for the other predictors.   
+
+$\beta_{sqft\_lot} = -0.000001888$. The estimated log odds of a house being ranked with above average condition and design decreases by 0.000001888 for each additional square foot of land space a house has, when controlling for the other predictors. In other words, the estimated odds of a house being ranked with above average condition and design is multiplied by exp(-0.000001888) = 0.9999981 for each additional dollar of a house is sold for, when controlling for the other predictors.   
+
+$\beta_{floors} = 0.5828$. The estimated log odds of a house being ranked with above average condition and design increases by 0.5828 for each additional floor or level a house has, when controlling for the other predictors. In other words, the estimated odds of a house being ranked with above average condition and design is multiplied by exp(0.5828) = 1.791046 for each additional dollar of a house is sold for, when controlling for the other predictors.    
+
+$\beta_{houseAge} = -0.03588$. The estimated log odds of a house being ranked with above average condition and design decreases by 0.03588 for each additional year old a house is, when controlling for the other predictors. In other words, the estimated odds of a house being ranked with above average condition and design is multiplied by exp(-0.03588) = 0.9647561 for each additional dollar of a house is sold for, when controlling for the other predictors.    
+
+

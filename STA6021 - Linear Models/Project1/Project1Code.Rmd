@@ -1,0 +1,557 @@
+---
+title: "Project 1 Code"
+author: "Rachel Holman, Hayden French, Addison Gambhir, and Isha Thukral"
+date: "2023-06-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(MASS)
+```
+
+## Diamonds Data
+
+### Look at Variables and Define New Ones 
+
+```{r, echo=FALSE}
+diamond <- read.csv("diamonds4.csv", header=TRUE)
+head(diamond)
+
+diamond <- diamond %>% 
+  mutate(clarity2= ordered(ifelse((clarity=="SI1"|clarity=="SI2"), "SI",
+                         ifelse((clarity=="VS1"|clarity=="VS2"), "VS",
+                         ifelse((clarity=="VVS1"|clarity=="VVS2"), 
+                                "VVS",as.character(clarity)))),
+                         levels=c("I1", "SI","VS","VVS","IF", "FL")),
+         clarity = factor(clarity, 
+                          levels=c("I1", "SI1","SI2","VS1","VS2","VVS1","VVS2","IF", "FL")),
+         cut = factor(cut, levels=c("Good", "Very Good","Ideal","Astor Ideal")),
+         carat2= ordered(ifelse((carat<1), "<1",
+                         ifelse((carat<2), "1 - 1.9",
+                         ifelse((carat<3), "2 - 2.9",
+                         ifelse((carat<4), "3 - 3.9",
+                         ifelse((carat<5), "4 - 4.9",
+                         ifelse((carat<6), "5 - 5.9",
+                         ifelse((carat<7), "6 - 6.9",
+                         ifelse((carat>=7), "7+",
+                                as.character(carat))))))))),
+                         levels=c("<1", "1 - 1.9","2 - 2.9","3 - 3.9",
+                                  "4 - 4.9", "5 - 5.9","6 - 6.9", "7+")))
+
+head(diamond)
+
+
+diamond2 <- subset(diamond, !(clarity == "FL"))
+  
+```
+#### Description of Variables:
+
+- `carat`: Weight of the diamond in carats (0.23 - 7.09)  
+- `clarity`: Measurement of how clear the diamond is    
+  - `I1` : Included Diamonds with obvious inclusions that impact beauty  
+  - `SI2`: Slightly Included Diamonds with inclusions detectable to keen unaided eye, especially when viewed from the side  
+  - `SI1`: Slightly Included Diamonds with inclusions noticable at 10x magnification (best value)  
+  - `VS2`: Very Slightly Included Diamonds with minor inclusions that are somewhat easy to see at 10x magnification  
+  - `VS1`: Very Slightly Included Diamonds with minor inclusions that are difficult to see   
+  - `VVS2`: Very Very Slightly Included Diamonds with minuscule inclusions that are difficult even for trained eyes to see under 10x magnification  
+  - `VVS1`: Very Very Slightly Included Diamonds with minuscule inclusions that are difficult even for trained eyes to see under 10x magnification  
+  - `IF`: Internally Flawless Diamonds with no inclusions within the stone, only surface characteristics set the grade  
+  - `FL`: Flawless Diamonds with no internal or external characteristics (rare)  
+- `color`: Measurement of faint diamond color  
+  - `D`: Rarest and highest quality with a pure icy look  
+  - `E`: Rarest and highest quality with a pure icy look  
+  - `F`: Rarest and highest quality with a pure icy look  
+  - `G`: No discernible color; great value for the quality  
+  - `H`: No discernible color; great value for the quality  
+  - `I`: No discernible color; great value for the quality  
+  - `J`: No discernible color; great value for the quality  
+- `cut`: Cut quality of Diamond  
+  - `Good`: This cut represents roughly the top 25% of diamond cut quality. It reflects most of the light that enters, but not as much as a Very Good cut grade.  
+  - `Very Good`: This cut represents roughly the top 15% of diamond cut quality. It reflects nearly as much light as the ideal cut, but for a lower price.  
+  - `Ideal`: This rare cut represents roughly the top 3% of diamond cut quality. It reflects most of the light that enters the diamond.  
+  - `Astor Ideal`: These diamonds are crafted to gather and reflect the most light possible. Cut from the finest raw material (rough stones with as few impurities or inclusions as possible), they meet rigorous quality requirements and exhibit outstanding brilliance, fire, and scintillation. In addition to being graded by the GIA, all Astor by Blue Nile™ diamonds are certified by GemEx®.  
+- `price`: Price is U.S. Dollars ($322 - $355403)  
+
+
+----
+
+## Create Visualizations For Bule Nile Claims
+
+### Claim 1: the cut of the diamond is biggest factor in the price  
+
+```{r, echo=FALSE}
+# line graph of average price for each diamond by cut quality
+diamond %>%
+  group_by(cut)%>%
+  mutate(avg_price= mean(price,na.rm=TRUE)) %>%
+  ggplot(aes(x= cut, y= avg_price, group=1)) +
+    geom_line( color="black") +
+    geom_point(shape=21, color="black", fill="lightgreen", size=6) +
+    theme_bw()+
+    theme(plot.title = element_text(hjust = 0.5))+
+    ggtitle("Average Price for Each Diamond by Cut Quality") +
+    labs(x="Cut Quality", y="Average Price (USD)")
+```
+
+
+```{r, echo=FALSE}
+# scatterplot of # of carats vs price (colored by cut)
+ggplot(aes(x=carat,y=price, color=cut),data=diamond) +
+  geom_smooth(method = "lm", se=FALSE, size=0.5)+
+  geom_point(alpha=0.5, size=2)+
+  facet_grid(~cut)+
+  theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x="Carat Weight",
+       y="Price (USD)",
+       color="Cut Quality",
+       title="Diamond Prices by Carat Weight and Cut Quality") +
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+Although many diamonds of "Very Good" and "Ideal" cuts are sold for much higher prices than any "Good" diamond is sold for, on average they are less expensive based only on the subset of data we are evaluating. Additionally, all cut qualities seem to have very similar price per carat relationships indicating that they are not a powerful factor in price determination. 
+
+### Claim 2: the absence of color makes a diamond more expensive
+
+```{r, echo=FALSE}
+# scatterplot of # of carats vs price (colored by color)
+ggplot(aes(x=carat,y=price, color=color),data=diamond) +
+  geom_smooth(method = "lm", se=FALSE, size=0.5)+
+  geom_point(alpha=0.5, size=2)+
+  theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x="Carat Weight",
+       y="Price (USD)",
+       color="Color",
+       title="Diamond Prices by Carat Weight and Color")+
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+```{r, echo=FALSE}
+diamond %>%
+  group_by(color)%>%
+  mutate(avg_price= mean(price,na.rm=TRUE)) %>%
+  ggplot(aes(x= color, y= avg_price, group=1)) +
+    geom_line( color="black") +
+    geom_point(shape=21, color="black", fill="lightgreen", size=6) +
+    theme_bw()+
+    theme(plot.title = element_text(hjust = 0.5))+
+    ggtitle("Average Price for Each Diamond Color") +
+    labs(x="Color", y="Average Price")
+
+diamond %>%
+  group_by(color)%>%
+  mutate(avg_carat= mean(carat,na.rm=TRUE)) %>%
+  ggplot(aes(x= color, y= avg_carat, group=1)) +
+    geom_line( color="black") +
+    geom_point(shape=21, color="black", fill="lightgreen", size=6) +
+    theme_bw()+
+    theme(plot.title = element_text(hjust = 0.5))+
+    ggtitle("Average Carat for Each Diamond by Color") +
+    labs(x="Color", y="Average Carat")
+```
+
+
+The color D means the diamond is pure, icy, and lacking color. As the color values sequence up through the alphabet, the amount of color present increases. It is clear from the plot above that the price per carat is higher for diamonds with less color than those with more. This affirms Blue Niles claim that the absence of color makes a diamond more expensive.
+
+The spike in average price for diamonds the color H may be patrially attributed to the fact that the H colored diamonds in this data set were, on average, larger carat weights than the other colored diamonds.
+
+
+### Claim 3: There is a pattern of "buying shy" in terms of carat weight when purchasing diamonds
+
+
+```{r, echo=FALSE}
+# Boxplot
+ggplot(diamond, aes(x = carat2, y = price)) +
+  geom_boxplot(fill = "lightblue", color = "darkblue") +
+  theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(title = "Distribution of Price by Carat Weight Range") +
+  xlab("Carat Weight Range") +
+  ylab("Price (USD)") +
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+
+#scatter plot
+ggplot(diamond, aes(x=carat,y=price)) + 
+  geom_vline(xintercept = seq(from=0.5, to=7, by = 0.5), color="blue", size=0.2, linetype="longdash", alpha=0.75)+
+  geom_point(alpha=0.5) +
+  theme_classic()+
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))+
+  labs(title="Price by Cut Weight", subtitle = "Dashed Lines at Each Half Carat", x="Carat Weight", y="Price (USD)")+
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+
+```{r}
+filtered_data <- diamond %>%
+filter(price <= 9000, carat <= 5)
+
+                     
+carat_categories <- cut(filtered_data$carat, breaks = seq(0, max(filtered_data$carat), by = 0.25))
+price_categories <- cut(filtered_data$price, breaks = 6)
+
+heatmap_data <- data.frame(
+  carat = carat_categories,
+  price = price_categories
+)
+
+# Count the occurrences of each combination of carat and price
+heatmap_counts <- table(heatmap_data)
+
+# Convert the table to a data frame for plotting
+heatmap_df <- as.data.frame(heatmap_counts)
+
+# Rename the columns for better readability
+names(heatmap_df) <- c("Carat", "Price", "Quantity")
+
+# Create the heatmap using ggplot2
+heatmap_plot <- ggplot(heatmap_df, aes(x = Carat, y = Price, fill = Quantity)) +
+  geom_tile() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(
+    title = "Heatmap of Quantity by Carat and Price",
+    x = "Carat Weight",
+    y = "Price"
+  ) +
+  theme_minimal()
+
+# Display the heatmap
+heatmap_plot
+```
+
+----
+
+## Linear Model Fitting
+
+
+```{r}
+ggplot(diamond, aes(x=carat,y=price)) + geom_point() + geom_smooth(method = "lm", se=FALSE) +
+  labs(title="Scatterplot of Price Against Carat", x="Carat", y="Price")
+```
+
+Here is the starting data. It seems like our errors do not have mean zero (there are more points above the line, then below, then above) and have increasing variance (points have greater vertical spread as carat increases)
+
+```{r}
+result<-lm(price~carat, data=diamond)
+par(mfrow = c(2, 2))
+plot(result)
+```
+
+We can see  more clearly now that several assumptions are violated. We can see from the residual plot that the residuals do not have mean zero (the line is not parallel to the x-axis) and do not have constant variance (we do not have an even vertical spread of data points as we move from left to right). Also, from the QQ plot we can see that our data are not normally distributed. Finally, from the residuals vs. leverage plot we see that there are several points which have a Cooks distance greater than 1, and should thus be treated as influential outliers. In conclusion, we need to transform both y and x.
+
+```{r}
+result <- lm(price~carat, data=diamond)
+library(MASS)
+MASS::boxcox(result, lambda = seq(0.2, 0.4, 1/10))
+```
+
+From the Box-Cox plot, we will try the transformation $y^* = y^{0.3}$
+
+```{r}
+ystar <- diamond$price^0.3
+diamond_transformed<-data.frame(diamond$carat,ystar)
+
+ggplot(diamond_transformed, aes(x=diamond.carat,y=ystar)) + geom_point() + geom_smooth(method = "lm", se=FALSE) +
+  labs(title="Scatterplot of Price (Transformed) Against Carat", x="Carat", y="Price ^ 0.3")
+```
+
+```{r}
+result<-lm(ystar~diamond.carat, data=diamond_transformed)
+par(mfrow = c(2, 2))
+plot(result)
+```
+
+After transforming the response variable we can see that assumptions 1 and 2 are still not met. We can see from the residual plot that the residuals do not have mean zero (the line is not parallel to the x-axis) and do not have constant variance (we do not have an even vertical spread of data points as we move from left to right).
+
+Let's see if we can better fix this increasing variance. We know from the Box-Cox plot that $\lambda < 1$, so let's try a log transformation.
+
+```{r}
+ystar <- log(diamond$price)
+diamond_transformed<-data.frame(diamond$carat,ystar)
+
+ggplot(diamond_transformed, aes(x=diamond.carat,y=ystar)) + geom_point() + geom_smooth(method = "lm", se=FALSE) +
+  labs(title="Scatterplot of Price (Transformed) Against Carat", x="Carat", y="log(Price)")
+```
+
+```{r}
+result<-lm(ystar~diamond.carat, data=diamond_transformed)
+par(mfrow = c(2, 2))
+plot(result)
+```
+
+These seems to have better fixed the increasing variance compared to the first transformation, so lets stick with $y^* = log(y)$. We now need to transform x as well.
+
+Based on the scatterplot, it seems like another log transformation for x will be the best option. It seems to match our data well and will allow us to best interpret our results. 
+```{r}
+xstar<-log(diamond$carat)
+diamond_final<-data.frame(xstar,ystar)
+
+ggplot(diamond_final, aes(x=xstar,y=ystar)) + geom_point() + geom_smooth(method = "lm", se=FALSE) +
+  labs(title="Scatterplot of Price (Transformed) Against Carat (Transformed)", x="log(Carat)", 
+       y="log(Price)")
+```
+
+```{r}
+result<-lm(ystar~xstar, data=diamond_final)
+par(mfrow = c(2, 2))
+plot(result)
+```
+
+It seems like we have finally satisfied the assumptions. Looking at the residual plot, we see that the line indicating the average values of the residuals is parallel to the x-axis, so assumption 1 is satisfied. We also see a more constant  vertical variation as x increases, so assumption 2 is satisfied as well.
+
+```{r}
+summary(result)
+```
+
+Our regression equation is $\hat{y}^* = 8.521 + 1.944x^*$, where $y^* = log(y)$ and $x^* = log(x)$. We also have $R^2 = 0.9547$. We can interpret this coefficient as follows: For an $a\%$ increase in carat, the price is multiplied by approximately $(1+\frac{a}{100})^{1.9}$. This means a $44\%$ increase in carat corresponds to a doubling in price.
+
+
+----
+
+## Additional Visuals
+
+```{r, echo=FALSE}
+# scatterplot of # of carats vs price (colored by cut)
+ggplot(aes(x=carat,y=price, color=cut),data=diamond) +
+  geom_smooth(method = "lm", se=FALSE, size=0.5)+
+  geom_point(alpha=0.5, size=2)+
+  facet_grid(~cut)+
+  labs(x="Carat",
+       y="Price (USD)",
+       color="Cut type",
+       title="Scatterplot of diamonds prices by carat and cut (Diamonds data)")
+
+# scatterplot of # of carats vs price (colored by clarity)
+ggplot(aes(x=carat,y=price, color=clarity),data=diamond) +
+  geom_smooth(method = "lm", se=FALSE, size=0.5)+
+  geom_point(alpha=0.5, size=2)+
+  theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x="Carat Weight",
+       y="Price (USD)",
+       color="Clarity",
+       title="Scatterplot of Diamonds Prices by Carat and Clarity")+
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+
+# scatterplot of # of carats vs price (colored by clarity2- the combined variable)
+ggplot(aes(x=carat,y=price, color=clarity2),data=diamond) +
+  geom_smooth(method = "lm", se=FALSE, size=0.5)+
+  geom_point(alpha=0.5, size=2)+
+  labs(x="Carat",
+       y="Price (USD)",
+       color="Clarity",
+       title="Scatterplot of diamonds prices by carat and clarity (Diamonds data)")
+```
+
+```{r, echo=FALSE}
+# Violin plot
+ggplot(diamond, aes(x = color, y = carat)) +
+  geom_violin(fill = "lightblue", color = "darkblue") +
+  labs(title = "Distribution of Carat by Color") +
+  xlab("color") +
+  ylab("carat")
+
+# Boxplot
+ggplot(diamond, aes(x = clarity, y = carat)) +
+  geom_boxplot(fill = "lightblue", color = "darkblue") +
+  labs(title = "Distribution of Carat by Clarity") +
+  xlab("Clarity") +
+  ylab("Carat")
+```
+
+```{r, echo=FALSE}
+# bar graph of mean price for each diamond clarity 
+ggplot()+
+  stat_summary(aes(x=clarity,y=price),
+               fun="mean",geom="bar",
+               data=diamond)+
+  labs(x="Clarity",
+       y="Price (USD)",
+       title="Bar graph of diamonds prices by clarity(Diamonds data)")
+```
+
+```{r, echo=FALSE}
+# histogram of prices
+ggplot()+
+  geom_histogram(aes(x=price), bins=100, data=diamond)+
+  labs(x="Price (USD)",
+       title="Historgram of diamonds prices(Diamonds data)")
+
+#histogram of diamond prices colored by clarity
+ggplot()+
+  geom_histogram(aes(x=price, fill= clarity), 
+                 bins=100, data=diamond) +
+  labs(x="Price (USD)",
+       fill="Clarity",
+       title="Historgram of diamonds prices colored by clarity (Diamonds data)")
+
+# ^ colored by carat
+ggplot()+
+  geom_histogram(aes(x=price, fill= cut), 
+                 bins=100, data=diamond) +
+  labs(x="Price (USD)",
+       fill="Cut",
+       title="Historgram of diamonds prices colored by cut type (Diamonds data)")
+
+# ^ colored by color
+ggplot()+
+  geom_histogram(aes(x=price, fill= color), 
+                 bins=100, data=diamond)+
+  labs(x="Price (USD)",
+       fill="Color",
+       title="Historgram of diamonds prices colored by color (Diamonds data)")
+```
+
+```{r, echo=FALSE}
+## Side-by-side boxplots of price for each clarity category
+ggplot(aes(x=clarity, y=price, fill=clarity), data=diamond)+
+  geom_boxplot()+
+  labs(x="Clarity",
+       y="Price (USD)",
+       title="Boxplot of diamonds prices by clarity (Diamonds data)")
+
+#box plots of price by clarity split by cut type
+ ggplot()+
+  geom_boxplot(aes(x=clarity, y=price,fill=cut), 
+               outlier.shape=3,outlier.size=0.2,data=diamond)+
+  coord_flip()+
+  labs(x="Clarity",
+       y="Price (USD)",
+       fill="Cut type",
+       title="Boxplot of diamonds prices by clarity and cut (Diamonds data)")+
+  theme(plot.title = element_text(h=0.5))
+```
+
+```{r, echo=FALSE}
+#violin plot of cut quality to carat weight
+ggplot()+
+  geom_violin(aes(x=cut, y=carat), data=diamond)+
+  geom_boxplot(aes(x=cut, y=carat),
+               width=0.1, fill="light blue", color="black", data=diamond)+
+  labs(x="Cut Quality", y="Carat Weight",
+       title="Violin Plots of Diamond Weight by Cut Quality")+
+  coord_flip()
+```
+
+```{r, echo=FALSE}
+### Grouped bargraphs of cut type colored by clarity
+ggplot()+
+  geom_bar(aes(x=cut, fill=clarity), 
+           stat="count",position ="dodge",
+           data=diamond)
+
+ggplot()+
+  geom_bar(aes(x=clarity, fill=cut), 
+           stat="count",position ="dodge",
+           data=diamond)
+```
+
+```{r, echo=FALSE}
+# line graph of avg carat by clarity
+diamond %>%
+  group_by(clarity2)%>%
+  mutate(avg_carat= mean(carat,na.rm=TRUE))%>%
+  ggplot(aes(x= clarity2, y= avg_carat, group=1)) +
+    geom_line( color="grey") +
+    geom_point(shape=21, color="black", fill="#69b3a2", size=6) +
+    ggtitle("Average Carat for Each Diamond Clarity Type") +
+    theme(plot.title = element_text(hjust = 0.5))+
+    labs(x="Clarity Type", y="Average Carat")
+
+# line graph of avg price by clarity
+diamond %>%
+  group_by(clarity2)%>%
+  mutate(avg_price= mean(price,na.rm=TRUE)) %>%
+  ggplot(aes(x= clarity2, y= avg_price, group=1)) +
+    geom_line( color="grey") +
+    geom_point(shape=21, color="black", fill="#69b3a2", size=6) +
+    ggtitle("Average Price for Each Diamond Clarity Type") +
+    theme(plot.title = element_text(hjust = 0.5))+
+    labs(x="Clarity Type", y="Average Price")
+
+# line graph of avg carat by cut
+diamond %>%
+  group_by(cut)%>%
+  mutate(avg_carat= mean(carat,na.rm=TRUE)) %>%
+  ggplot(aes(x= cut, y= avg_carat, group=1)) +
+    geom_line( color="black") +
+    geom_point(shape=21, color="black", fill="lightgreen", size=6) +
+    ggtitle("Average Carat for Each Diamond by Cut Quality") +
+    labs(x="Cut Quality", y="Average Carat")
+```
+
+```{r, echo=FALSE}
+# matrix plot
+ggplot(diamond, aes(x = carat, y = price)) +
+  geom_point() +
+  geom_smooth(method = "lm", se=FALSE, size=0.5)+
+  facet_grid(cut ~ clarity) +
+  labs(x = "Carat", y = "Price (USD)", color = "Cut", shape = "Clarity") +
+  ggtitle("Scatterplot Matrix of Carat, Price, Cut, and Clarity")
+```
+
+```{r, echo=FALSE}
+library(gridExtra)
+
+# Cut pie chart
+cut_counts <- diamond %>%
+  count(cut)
+total_cut <- sum(cut_counts$n)
+cut_counts$percentage <- cut_counts$n / total_cut * 100
+
+pie_cut <- ggplot(cut_counts, aes(x = "", y = n, fill = cut)) +
+  geom_bar(stat = "identity", width = 1) +
+  geom_text(aes(label = paste0(round(percentage), "%")), position = position_stack(vjust = 0.5)) +
+  coord_polar("y", start = 0) +
+  labs(title = "Proportion of Diamond Cuts",
+       fill = "Cut",
+       x = NULL, y = NULL) +
+  theme_void() +
+  theme(legend.position = "right") 
+
+# Color pie chart
+color_counts <- diamond %>%
+  count(color)
+
+total_color <- sum(color_counts$n)
+color_counts$percentage <- color_counts$n / total_color * 100
+
+pie_color <- ggplot(color_counts, aes(x = "", y = n, fill = color)) +
+  geom_bar(stat = "identity", width = 1) +
+  geom_text(aes(label = paste0(round(percentage), "%")), position = position_stack(vjust = 0.5))+
+  coord_polar("y", start = 0) +
+  labs(title = "Proportion of Diamond Color",
+       fill = "Color",
+       x = NULL, y = NULL) +
+  theme_void() +
+  theme(legend.position = "right")
+
+#Clarity pie chart
+clarity_counts <- diamond %>%
+  count(clarity)
+
+total_clarity <- sum(clarity_counts$n)
+clarity_counts$percentage <- clarity_counts$n / total_clarity * 100
+
+pie_clarity <- ggplot(clarity_counts, aes(x = "", y = n, fill = clarity)) +
+  geom_bar(stat = "identity", width = 1) +
+  geom_text(aes(label = paste0(round(percentage), "%")), position = position_stack(vjust = 0.5))+
+  coord_polar("y", start = 0) +
+  labs(title = "Proportion of Diamond Clarity",
+       fill = "Clarity",
+       x = NULL, y = NULL) +
+  theme_void() +
+  theme(legend.position = "right")
+
+# plot them
+pie_cut
+pie_clarity
+pie_color
+```
+
+                     
+                     
